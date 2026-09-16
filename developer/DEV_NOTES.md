@@ -37,3 +37,7 @@ Extend the manifest to match any future added runtime assets. Retain regression 
 
 ## Session handoff
 Initial implementation, documentation, packaging, installation, and tests complete.
+
+## Parent directory update
+Missing --proj-dir parents are now created recursively. Existing projects remain
+protected. All 12 tests and the installed CLI nested-parent smoke test passed on Linux.

@@ -22,12 +22,12 @@ To uninstall the stdlib installation, remove the two managed launchers and the
 
 ```sh
 project-setup --project my-project
-project-setup --project my-project --proj-dir /path/to/existing/parent
+project-setup --project my-project --proj-dir /path/to/parent
 project-setup --project my-project --remote git@github.com:USER/REPO.git --git-push
 ```
 
-`--project` is required. `--proj-dir` defaults to the current directory. The parent
-must exist; an existing project directory is always refused, even if empty.
+`--project` is required. `--proj-dir` defaults to the current directory. Missing parent
+directories are created automatically; an existing project directory is always refused, even if empty.
 Remote creation is left to your Git hosting service. With `--remote`, origin is
 configured; `--git-push` explicitly commits and pushes the new structure.
 Git identity is inherited from your configuration; if missing, files remain staged

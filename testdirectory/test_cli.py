@@ -41,6 +41,17 @@ class Integration(unittest.TestCase):
         self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
         self.call(sys.executable,'-c','from project_setup.cli import setup_main; setup_main()','--project','demo','--proj-dir',str(self.base),ok=False)
         self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
+    def test_missing_parent(self):
+        parent = self.base/'nested'/'parent'
+        self.call(sys.executable, '-c', 'from project_setup.cli import setup_main; setup_main()',
+                  '--project', 'created', '--proj-dir', str(parent))
+        self.assertEqual((parent/'created/VERSION').read_text(), '0.0.1\n')
+    def test_parent_is_file(self):
+        parent = self.base/'file'
+        parent.write_text('preserve')
+        self.call(sys.executable, '-c', 'from project_setup.cli import setup_main; setup_main()',
+                  '--project', 'created', '--proj-dir', str(parent), ok=False)
+        self.assertEqual(parent.read_text(), 'preserve')
     def test_history_release(self):
         self.update('--version')
         self.update('--version','0.99.99')

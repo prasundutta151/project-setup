@@ -196,8 +196,7 @@ def scaffold(args):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project):
         raise Error('PROJECT must be a single directory name starting with a letter or digit.')
     parent = Path(args.proj_dir).expanduser().resolve()
-    if not parent.is_dir():
-        raise Error('The parent directory must already exist.')
+    parent.mkdir(parents=True, exist_ok=True)
     root = parent / args.project
     root.mkdir()  # exclusive: never overwrite or merge
     for directory in DIRS:
