@@ -1,0 +1,12 @@
+.git/
+versions/*
+!versions/.gitkeep
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.DS_Store
+.env
+.env.*

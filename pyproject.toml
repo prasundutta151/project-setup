@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-setup"
+version = "0.0.1"
+description = "Portable macOS/Linux project scaffolding and release CLI"
+requires-python = ">=3.9"
+
+[project.scripts]
+project-setup = "project_setup.cli:setup_main"
+project-update = "project_setup.cli:update_main"
+
+[tool.setuptools]
+packages = ["project_setup"]

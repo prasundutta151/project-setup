@@ -1,0 +1,8 @@
+VERSION
+README.md
+pyproject.toml
+install.py
+project_setup
+script
+docs
+release-files.txt
