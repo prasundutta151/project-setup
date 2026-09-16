@@ -19,6 +19,22 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-16 22:39:37 IST
+
+Prompt / Request
+- Base generated agent rules on GMRTCAL's rules, excluding documentation synchronization.
+
+Changes Made
+- Replaced the rules template and this repository's rules; adapted project names, paths, updater commands, and section numbering.
+- Retained developer logging and once-per-session loading.
+
+Verification
+- Installed the updated CLI and generated RulesDemo in a temporary directory.
+- Checked substituted names and paths, retained logging, and removal of the documentation-sync section.
+
+Notes
+- GMRTCAL source files and existing generated projects were not modified.
+
 ## 2026-09-16 22:32:22 IST
 
 Prompt / Request
