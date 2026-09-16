@@ -70,6 +70,13 @@ class Integration(unittest.TestCase):
         self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
         self.call(sys.executable,'-c','from project_setup.cli import setup_main; setup_main()','--project','demo','--proj-dir',str(self.base),ok=False)
         self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
+    def test_first_push_on_unborn_branch(self):
+        self.remote()
+        # Remove the sole test commit's branch ref to recreate an unborn branch.
+        self.git('update-ref', '-d', 'refs/heads/main')
+        self.update('--git-push', '--message', 'First commit')
+        self.assertEqual(self.git('log', '-1', '--format=%s'), 'First commit')
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.git('rev-parse', 'origin/main'))
     def test_missing_parent(self):
         parent = self.base/'nested'/'parent'
         self.call(sys.executable, '-c', 'from project_setup.cli import setup_main; setup_main()',

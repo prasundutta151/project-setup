@@ -245,9 +245,9 @@ def transfer(root, operation, target, message):
             raise Error('Pull requires a clean working tree; commit or stash changes first.')
         git(root, 'pull', '--ff-only', 'origin', branch)
     else:
-        git(root, 'show-ref', '--verify', f'refs/heads/{branch}')
         if branch == current_branch(root):
             commit(root, message)
+        git(root, 'show-ref', '--verify', f'refs/heads/{branch}')
         git(root, 'push', '--set-upstream', 'origin', f'refs/heads/{branch}:refs/heads/{branch}')
 
 def release(root, version, message):
