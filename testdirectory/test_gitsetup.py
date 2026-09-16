@@ -31,7 +31,7 @@ class GitSetupTests(unittest.TestCase):
             root=Path(d)/'repo'
             gitsetup.main(['new','alice/demo','--directory',str(root)])
             self.assertTrue((root/'.git').is_dir())
-            ensure.assert_called_once_with(root,'https://github.com/alice/demo.git')
+            ensure.assert_called_once_with(root.resolve(),'https://github.com/alice/demo.git')
     @patch.object(gitsetup,'ensure_remote')
     def test_preserves_existing_origin(self,ensure):
         with tempfile.TemporaryDirectory() as d:
