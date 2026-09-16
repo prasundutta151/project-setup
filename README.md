@@ -135,3 +135,53 @@ contents, manifest rejection, commit messages, branch/tag publishing, clean-tree
 checks, and fast-forward pulls against temporary local bare repositories.
 Linux is verified locally; macOS is covered by the included CI workflow, which
 must run remotely before macOS execution can be claimed.
+
+## Python Git setup helpers
+
+Version 0.0.2 includes a Python port of the helpers in
+[prasundutta151/gitsetup](https://github.com/prasundutta151/gitsetup).
+The original repository is unchanged. Run `git-setup` for numbered setup instructions,
+or access every helper with `project-setup --git-setup`:
+
+```sh
+git-setup guide
+project-setup --git-setup guide
+git-setup configure --name "Your Name" --email "your-email@example.com"
+git-setup new my-repo --directory /path/to/existing-project --push
+git-setup clone OWNER/REPO --directory /path/to/new-checkout
+git-setup update --directory /path/to/project --message "Describe changes"
+```
+
+`configure` explicitly changes global Git identity on this machine. Authentication
+is performed separately with `gh auth login` and `gh auth setup-git`; credentials
+are never collected by these Python commands. `new` initializes a Git repository
+and creates a private GitHub remote if missing. It does not generate a project
+scaffold; use `project-setup --project NAME --git-push` for that. Supply at least
+one nonignored file before pushing a newly initialized directory.
+
+Use `OWNER/REPO` explicitly, or just `REPO` to infer the owner from GitHub CLI.
+Existing origin URLs are preserved: a mismatch produces an error instead of
+silently replacing the remote. Cloning refuses existing destinations. Updating
+commits all nonignored changes and pushes the current branch without forcing.
+Inspect `git status` before using it. The helper names and arguments are modernized:
+
+| Original shell helper | Python command |
+| --- | --- |
+| `git-setup` | `git-setup guide` (or just `git-setup`) |
+| `git-new-repo NAME` | `git-setup new NAME --directory DIR --push` |
+| `git-clone-repo NAME` | `git-setup clone NAME` |
+| `git-update-repo PATH` | `git-setup update --directory DIR --message TEXT` |
+
+The installer adds `git-setup` alongside the other two commands. Old shell aliases
+are not overwritten or installed. To uninstall, also remove the managed `git-setup`
+launcher and the installed HTML guide directory.
+
+## HTML guide and release download
+
+Open `docs/index.html` in any browser; it works offline and includes this complete
+reference. The stdlib installer also copies it to
+`~/.local/share/project-setup/docs/index.html` (or `PREFIX/share/project-setup/docs/`).
+
+Download an installable archive from the repository's GitHub Releases page, extract
+it, change into the extracted directory, then run `python3 install.py`.
+Python 3.9+ and Git remain required; GitHub operations additionally require `gh`.

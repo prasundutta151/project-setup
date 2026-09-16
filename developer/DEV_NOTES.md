@@ -19,6 +19,25 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-17 00:17:34 IST
+
+Prompt / Request
+- Port the account's gitsetup helpers to Python, integrate with project-setup, document in HTML, install and publish installable software.
+
+Changes Made
+- Added git-setup guide/configure/new/clone/update and project-setup --git-setup dispatch.
+- Added an offline HTML guide and installed documentation; version 0.0.2.
+- Preserved the source gitsetup repository and existing shell helper names.
+
+Verification
+- All 25 unit/integration tests pass locally; identity tests use isolated Git configuration.
+- HTML navigation targets checked. Browser preview of local files was blocked by browser URL policy, so visual rendering was not verified.
+- Release extraction and isolated installation are checked before publishing.
+
+Notes
+- GitHub operations require GitHub CLI authentication; runtime Python code uses stdlib only.
+
+
 ## 2026-09-16 22:44:56 IST
 
 Prompt / Request

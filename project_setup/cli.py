@@ -409,7 +409,11 @@ def scaffold(args):
     print(f'Created: {root}')
 
 def setup_main():
-    p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling.')
+    if len(sys.argv) > 1 and sys.argv[1] == '--git-setup':
+        from .gitsetup import main
+        main(sys.argv[2:])
+        return
+    p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
     p.add_argument('--project', required=True)
     p.add_argument('--proj-dir', default='.')
     p.add_argument('--remote', help='Git remote URL to configure as origin')

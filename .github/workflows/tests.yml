@@ -15,3 +15,6 @@ jobs:
       - run: python -m unittest discover -s testdirectory -v
       - run: python install.py --prefix "$RUNNER_TEMP/project-setup-install"
       - run: '"$RUNNER_TEMP/project-setup-install/bin/project-setup" --project smoke --proj-dir "$RUNNER_TEMP"'
+
+      - run: '"$RUNNER_TEMP/project-setup-install/bin/git-setup" guide'
+      - run: '"$RUNNER_TEMP/project-setup-install/bin/project-setup" --git-setup guide'

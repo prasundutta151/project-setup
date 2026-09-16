@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>project-setup — User Guide</title><style>
+:root{color-scheme:light;--ink:#182b3a;--accent:#075e69}*{box-sizing:border-box}body{margin:0;background:#f2f5f7;color:var(--ink);font:17px/1.65 system-ui,sans-serif}header{background:#123640;color:white;padding:42px max(24px,calc((100% - 960px)/2))}header p{margin:0;opacity:.85}.badge{font-size:13px;text-transform:uppercase;letter-spacing:2px}main{max-width:1000px;margin:0 auto;padding:32px 32px 80px;background:white}h1{font-size:2.5rem;line-height:1.15}h2{margin-top:2.3em;border-bottom:1px solid #dbe3e6;padding-bottom:.4em}h3{margin-top:2em}a{color:var(--accent)}pre{background:#102d38;color:#e8f2f5;padding:20px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.6}code{font-family:ui-monospace,monospace;font-size:.88em}p code,li code,td code{background:#edf2f4;padding:2px 4px;border-radius:3px}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid #dbe3e6;padding:10px;text-align:left;vertical-align:top}th{background:#eaf1f3}nav{display:flex;flex-wrap:wrap;gap:16px;padding:14px 0}footer{max-width:960px;margin:20px auto;padding:20px;color:#4b626c}@media(max-width:600px){main{padding:20px 16px}h1{font-size:2rem}table{display:block;overflow:auto}}@media print{body,main{background:white}pre{white-space:pre-wrap}header{padding:20px}a{color:inherit}}
+</style></head><body><header><p class="badge">macOS + Linux · Python 3.9+</p><h1>Projects, ready to build.</h1><p>project-setup 0.0.2 · Installation, Git setup, versioning and releases</p></header><main><nav><a href="#install">Install</a><a href="#create-a-project">Create a project</a><a href="#python-git-setup-helpers">Git helpers</a><a href="#update-and-release">Releases</a><a href="#git-synchronization">Git reference</a></nav><h1 id="project-setup">project-setup</h1>
+<p>Create consistent Python-friendly projects on macOS and Linux. Runtime uses only
+Python's standard library. Requires Python 3.9+ and Git 2.28+ on PATH.</p>
+<h2 id="install">Install</h2>
+<pre><code class="language-sh">python3 install.py
+# If ~/.local/bin is not already on PATH, add this to your shell profile:
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+</code></pre>
+<p>The installer copies the package to <code>~/.local/lib/project-setup/</code> and puts two
+commands in <code>~/.local/bin/</code>. Re-run to upgrade; unrelated commands are never
+overwritten. A custom prefix is supported: <code>python3 install.py --prefix /path</code>.
+Alternatively install using <code>python3 -m pip install .</code> in a virtual environment.
+To uninstall the stdlib installation, remove the two managed launchers and the
+<code>~/.local/lib/project-setup</code> directory.</p>
+<h2 id="create-a-project">Create a project</h2>
+<pre><code class="language-sh">project-setup --project my-project
+project-setup --project my-project --proj-dir /path/to/parent
+project-setup --project my-project --remote git@github.com:USER/REPO.git --git-push
+</code></pre>
+<p><code>--project</code> is required. <code>--proj-dir</code> defaults to the current directory. Missing parent
+directories are created automatically; an existing project directory is always refused, even if empty.
+For GitHub, <code>--remote</code> checks for the repository and creates it privately if missing.
+Use <code>--create-remote</code> without a URL to create <code>YOUR_ACCOUNT/PROJECT</code> using the
+account authenticated in GitHub CLI (<code>gh</code>). <code>--git-push</code> also ensures that remote
+exists, commits, and pushes, so a URL is optional:</p>
+<pre><code class="language-sh">project-setup --project my-project --git-push
+project-setup --project my-project --create-remote
+</code></pre>
+<p>GitHub provisioning requires <code>gh</code> and <code>gh auth login</code>. Existing repository visibility
+is preserved. Other Git hosts/local remotes are configured but not automatically
+provisioned. If Git initialization, remote creation, or push fails, the terminal
+prints numbered installation, identity, authentication, and recovery commands.
+These use absolute project paths and work from any directory. Files remain intact;
+do not rerun setup against that existing project.
+Git identity is inherited from your configuration; if missing, files remain staged
+and the command explains how to finish the commit. Git failures retain local files.</p>
+<pre><code class="language-text">my-project/
+  VERSION                    # newest version first, initially 0.0.1
+  README.md
+  .gitignore
+  release-files.txt           # explicit distribution file list
+  script/project-update      # executable, standalone Python updater
+  docs/                      # HTML and Markdown documentation
+  data/                      # application data
+  versions/                  # release staging directories and tarballs (ignored)
+  developer/DEV_NOTES.md      # structured agent handoff and decision log
+  developer/AGENT_RULES.md    # load once per session, reload on changes/context loss
+  testdirectory/             # test code and fixtures
+</code></pre>
+<p>The generated updater is self-contained and works even if project-setup is later
+uninstalled. Run it from anywhere; it finds its project from its own location.
+The installed <code>project-update</code> command finds the repository containing your current
+working directory. Empty directories contain <code>.gitkeep</code> so Git preserves them.</p>
+<h2 id="update-and-release">Update and release</h2>
+<pre><code class="language-sh">./script/project-update --version
+./script/project-update --version middle
+./script/project-update --version major
+./script/project-update --version 2.3.4
+./script/project-update --version --release --git-push --message &quot;Publish update&quot;
+</code></pre>
+<p>The format is <code>MAJOR.MIDDLE.MINOR</code>. Here <strong>minor means the rightmost component</strong>,
+as requested, rather than conventional semantic-version terminology. With no value,
+<code>--version</code> means minor. Rightmost 99 rolls to 0 and increments middle; middle 99
+rolls to 0 and increments major. Middle increments reset minor; major increments
+reset both. Explicit versions must have three nonnegative integers, no leading
+zeros, and middle/minor between 0 and 99. Setting the current version is a no-op;
+other changes prepend the new value and retain all history, including revisits.</p>
+<p>Releases copy the paths in <code>release-files.txt</code> into <code>versions/PROJECT-VERSION/</code>, then
+create <code>versions/PROJECT-VERSION.tar.gz</code>. One project-relative file or directory
+per line; blank lines and <code>#</code> comments are allowed. No globs. Edit this manifest to
+include your install script, package code, dependencies, and assets. The scaffolder
+cannot infer a future application's installation requirements. Releases of this
+software include <code>install.py</code> and can be installed after extraction.</p>
+<p>Versions, Git metadata, caches, build output, and <code>.env</code> files are excluded.
+Symlinks and parent traversal are refused. Review the manifest before distributing:
+it is an allowlist, not a general secret scanner. Existing releases are never
+replaced. <code>RELEASE.txt</code> records the version and message in the staging directory.</p>
+<h2 id="git-synchronization">Git synchronization</h2>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Push</th>
+<th>Pull</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No value</td>
+<td>Commit all nonignored changes and push current branch</td>
+<td>Fast-forward current branch from origin</td>
+</tr>
+<tr>
+<td>Branch</td>
+<td>Push that existing local branch; commit only if it is current</td>
+<td>Fast-forward only if already on that branch</td>
+</tr>
+<tr>
+<td><code>show</code></td>
+<td>List local and known remote branches</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Version, e.g. <code>1.2.3</code></td>
+<td>Push existing <code>v1.2.3</code> tag, or commit and create it when VERSION matches</td>
+<td>Fetch <code>v1.2.3</code> tag without checkout</td>
+</tr>
+</tbody>
+</table>
+<p>Tags are annotated when created. Existing tags are never moved. Fetching a version
+makes it available for inspection with <code>git show v1.2.3</code> without changing local
+files. <code>show</code> cannot be combined with mutations. Pull requires a clean working tree
+and refuses merges, rebases, branch switches, and non-fast-forward updates.
+Pushes use origin and never force. Branch pushes do not automatically create tags;
+use a version target when a version tag is desired.</p>
+<p>Operations compose in this order: <strong>pull → version → release → commit/push</strong>.
+Failures stop subsequent operations, but completed steps remain: this is not a
+transaction across disk and a remote server. For example, a failed push retains the
+local release and commit. Retry with just <code>--git-push</code>; do not repeat a version bump.
+Only one updater should run against a project at a time.</p>
+<p><code>--massage</code> and <code>--message</code> are aliases. Omit the value (or the option) to use local
+datetime <code>DD:MM:YY|HH-MM-SS</code>; otherwise the supplied text becomes the commit/release
+message. Git push commits <strong>all nonignored changes</strong> on the current branch, so review
+<code>git status</code> first. For values starting with a dash, use <code>--message=-text</code>.</p>
+<h2 id="development-and-validation">Development and validation</h2>
+<pre><code class="language-sh">python3 -m unittest discover -s testdirectory -v
+</code></pre>
+<p>Tests cover rollover and validation, safe scaffolding, version history, release
+contents, manifest rejection, commit messages, branch/tag publishing, clean-tree
+checks, and fast-forward pulls against temporary local bare repositories.
+Linux is verified locally; macOS is covered by the included CI workflow, which
+must run remotely before macOS execution can be claimed.</p>
+<h2 id="python-git-setup-helpers">Python Git setup helpers</h2>
+<p>Version 0.0.2 includes a Python port of the helpers in
+<a href="https://github.com/prasundutta151/gitsetup">prasundutta151/gitsetup</a>.
+The original repository is unchanged. Run <code>git-setup</code> for numbered setup instructions,
+or access every helper with <code>project-setup --git-setup</code>:</p>
+<pre><code class="language-sh">git-setup guide
+project-setup --git-setup guide
+git-setup configure --name &quot;Your Name&quot; --email &quot;your-email@example.com&quot;
+git-setup new my-repo --directory /path/to/existing-project --push
+git-setup clone OWNER/REPO --directory /path/to/new-checkout
+git-setup update --directory /path/to/project --message &quot;Describe changes&quot;
+</code></pre>
+<p><code>configure</code> explicitly changes global Git identity on this machine. Authentication
+is performed separately with <code>gh auth login</code> and <code>gh auth setup-git</code>; credentials
+are never collected by these Python commands. <code>new</code> initializes a Git repository
+and creates a private GitHub remote if missing. It does not generate a project
+scaffold; use <code>project-setup --project NAME --git-push</code> for that. Supply at least
+one nonignored file before pushing a newly initialized directory.</p>
+<p>Use <code>OWNER/REPO</code> explicitly, or just <code>REPO</code> to infer the owner from GitHub CLI.
+Existing origin URLs are preserved: a mismatch produces an error instead of
+silently replacing the remote. Cloning refuses existing destinations. Updating
+commits all nonignored changes and pushes the current branch without forcing.
+Inspect <code>git status</code> before using it. The helper names and arguments are modernized:</p>
+<table>
+<thead>
+<tr>
+<th>Original shell helper</th>
+<th>Python command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git-setup</code></td>
+<td><code>git-setup guide</code> (or just <code>git-setup</code>)</td>
+</tr>
+<tr>
+<td><code>git-new-repo NAME</code></td>
+<td><code>git-setup new NAME --directory DIR --push</code></td>
+</tr>
+<tr>
+<td><code>git-clone-repo NAME</code></td>
+<td><code>git-setup clone NAME</code></td>
+</tr>
+<tr>
+<td><code>git-update-repo PATH</code></td>
+<td><code>git-setup update --directory DIR --message TEXT</code></td>
+</tr>
+</tbody>
+</table>
+<p>The installer adds <code>git-setup</code> alongside the other two commands. Old shell aliases
+are not overwritten or installed. To uninstall, also remove the managed <code>git-setup</code>
+launcher and the installed HTML guide directory.</p>
+<h2 id="html-guide-and-release-download">HTML guide and release download</h2>
+<p>Open <code>docs/index.html</code> in any browser; it works offline and includes this complete
+reference. The stdlib installer also copies it to
+<code>~/.local/share/project-setup/docs/index.html</code> (or <code>PREFIX/share/project-setup/docs/</code>).</p>
+<p>Download an installable archive from the repository's GitHub Releases page, extract
+it, change into the extracted directory, then run <code>python3 install.py</code>.
+Python 3.9+ and Git remain required; GitHub operations additionally require <code>gh</code>.</p></main><footer>Offline user guide · project-setup · <a href="https://github.com/prasundutta151/project-setup">Source and releases</a></footer></body></html>
