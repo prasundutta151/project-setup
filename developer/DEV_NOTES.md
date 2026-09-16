@@ -1,3 +1,41 @@
+# project-setup Developer Notes
+
+This file is the running developer log for project-setup. Add a new timestamped entry whenever the code, plans, packaging, or workflow changes.
+
+Entry format:
+```text
+## YYYY-MM-DD HH:MM:SS TZ
+
+Prompt / Request
+- Polished summary of what was asked.
+
+Changes Made
+- What changed in code, plans, docs, data products, or packaging.
+
+Verification
+- Commands or checks run.
+
+Notes
+- Follow-up context, assumptions, or cautions.
+```
+
+## 2026-09-16 22:32:22 IST
+
+Prompt / Request
+- Use the requested timestamped developer log template and substitute each project's name.
+
+Changes Made
+- Updated the scaffold template and reinstalled the local commands.
+- Adopted the template for this repository, preserving earlier notes below.
+
+Verification
+- Created Example-Project with the installed command and checked the complete generated notes and both name substitutions.
+
+Notes
+- New projects receive the new template; existing generated projects are not automatically modified.
+
+# Earlier developer notes (preserved)
+
 # Developer notes
 
 ## Purpose and scope

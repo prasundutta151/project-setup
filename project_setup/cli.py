@@ -27,31 +27,26 @@ in context; reload only when this file changes or context is lost.
 - Maintain release-files.txt as an explicit list of distributable paths.
 - Run relevant tests and report limitations honestly.
 '''
-NOTES = '''# Developer notes
+NOTES = '''# {project} Developer Notes
 
-## Purpose and scope
-Describe the project goal and intended users.
+This file is the running developer log for {project}. Add a new timestamped entry whenever the code, plans, packaging, or workflow changes.
 
-## Current state
-- Version: see ../VERSION (first line).
-- Working features:
-- Known limitations:
+Entry format:
+```text
+## YYYY-MM-DD HH:MM:SS TZ
 
-## Architecture and entry points
-Describe modules, commands, dependencies, and data flow.
+Prompt / Request
+- Polished summary of what was asked.
 
-## Decisions
-| Date | Decision | Reason |
-| --- | --- | --- |
+Changes Made
+- What changed in code, plans, docs, data products, or packaging.
 
-## Validation
-Record commands, results, platform, and date.
+Verification
+- Commands or checks run.
 
-## Next steps
-List concrete remaining work and blockers.
-
-## Session handoff
-Summarize changes, files touched, and unresolved questions after each session.
+Notes
+- Follow-up context, assumptions, or cautions.
+```
 '''
 
 class Error(Exception):
@@ -278,7 +273,7 @@ def scaffold(args):
         (root / directory / '.gitkeep').touch()
     (root / 'VERSION').write_text('0.0.1\n')
     (root / '.gitignore').write_text(IGNORE)
-    (root / 'developer/DEV_NOTES.md').write_text(NOTES)
+    (root / 'developer/DEV_NOTES.md').write_text(NOTES.format(project=args.project))
     (root / 'developer/AGENT_RULES.md').write_text(RULES)
     (root / 'README.md').write_text(f'# {args.project}\n\nDescribe installation and usage here.\n')
     (root / 'release-files.txt').write_text('VERSION\nREADME.md\nscript\ndocs\ndata\nrelease-files.txt\n')
