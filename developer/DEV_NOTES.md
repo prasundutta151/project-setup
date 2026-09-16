@@ -41,3 +41,8 @@ Initial implementation, documentation, packaging, installation, and tests comple
 ## Parent directory update
 Missing --proj-dir parents are now created recursively. Existing projects remain
 protected. All 12 tests and the installed CLI nested-parent smoke test passed on Linux.
+
+## GitHub provisioning update
+GitHub remotes are created privately when missing. --git-push can infer the remote
+from the authenticated account. Failure guidance includes terminal setup and recovery.
+Remote behavior is tested with mocked GitHub responses; no disposable remote is created.

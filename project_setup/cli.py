@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import subprocess
 import sys
 import tarfile
@@ -192,6 +193,79 @@ def release(root, version, message):
         raise
     print(f'Release: {archive}')
 
+def github(root, *args):
+    if not shutil.which('gh'):
+        raise Error('GitHub CLI (gh) is not installed.')
+    result = subprocess.run(['gh', *args], cwd=root, text=True, capture_output=True)
+    if result.returncode:
+        raise Error(result.stderr.strip() or 'GitHub operation failed.')
+    return result.stdout.strip()
+
+def ensure_remote(root, remote):
+    if remote:
+        match = re.fullmatch(r'(?:https://github\.com/|git@github\.com:)([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?', remote)
+        if not match:
+            # Other Git hosts and local remotes remain supported, but are not provisioned.
+            git(root, 'remote', 'add', 'origin', remote)
+            return
+        repo = match.group(1)
+    else:
+        login = github(root, 'api', 'user', '--jq', '.login')
+        repo = login + '/' + root.name
+        remote = 'https://github.com/' + repo + '.git'
+    github(root, 'auth', 'status')
+    try:
+        github(root, 'repo', 'view', repo, '--json', 'name')
+    except Error:
+        # Creation fails safely if the name exists but this account cannot access it.
+        github(root, 'repo', 'create', repo, '--private')
+        print(f'Created private GitHub repository: {repo}')
+    git(root, 'remote', 'add', 'origin', remote)
+
+def setup_guidance(root, remote=None):
+    location = shlex.quote(str(root))
+    print(f"""
+Git setup could not finish. Your project files are retained at {root}.
+Run these steps in a terminal; the commands work from any directory.
+
+1. Install Git and GitHub CLI if missing:
+   macOS (with Homebrew): brew install git gh
+   Ubuntu/Debian: sudo apt update && sudo apt install git gh
+   Other Linux: install git and gh with your distribution's package manager.
+   Install help: https://git-scm.com/downloads and https://cli.github.com/
+
+2. Set your identity (replace the example values). --global applies to this computer:
+   git config --global user.name "Your Name"
+   git config --global user.email "your-email@example.com"
+
+3. Sign in and enable Git authentication:
+   gh auth login --hostname github.com --git-protocol https --web
+   gh auth setup-git
+   gh auth status
+
+4. Initialize the retained project if Git initialization failed, then commit:
+   git -C {location} init -b main
+   git -C {location} add --all
+   git -C {location} commit -m "Initialize project"
+   If Git says there is nothing to commit, continue.
+
+5. Create the repository if it is missing:
+   gh repo create YOUR_ACCOUNT/{root.name} --private
+   If the repository already exists, use its existing URL.
+
+6. Check origin, then add it only if absent (replace YOUR_ACCOUNT):
+   git -C {location} remote -v
+   git -C {location} remote add origin https://github.com/YOUR_ACCOUNT/{root.name}.git
+   If origin exists but is wrong, use 'remote set-url origin URL' instead.
+
+7. Push the current branch:
+   git -C {location} push --set-upstream origin HEAD
+   Do not run project-setup again against this existing directory.
+""", file=sys.stderr)
+    if remote:
+        print(f'Requested remote: {remote} (use its owner/name in steps 5–6).', file=sys.stderr)
+
+
 def scaffold(args):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project):
         raise Error('PROJECT must be a single directory name starting with a letter or digit.')
@@ -211,16 +285,20 @@ def scaffold(args):
     updater = root / 'script/project-update'
     updater.write_text('#!/usr/bin/env python3\n' + Path(__file__).read_text() + '\nif __name__ == "__main__":\n    update_main(root=Path(__file__).resolve().parent.parent)\n')
     updater.chmod(0o755)
-    git(root, 'init', '-b', 'main')
-    git(root, 'add', '--all')
-    if git(root, 'var', 'GIT_AUTHOR_IDENT', check=False):
-        commit(root, 'Initialize project')
-    else:
-        print('Git initialized and files staged. Configure Git user.name/user.email to commit.')
-    if args.remote:
-        git(root, 'remote', 'add', 'origin', args.remote)
-    if args.git_push:
-        transfer(root, 'push', None, 'Initialize project')
+    try:
+        git(root, 'init', '-b', 'main')
+        git(root, 'add', '--all')
+        if git(root, 'var', 'GIT_AUTHOR_IDENT', check=False):
+            commit(root, 'Initialize project')
+        else:
+            print('Git initialized and files staged. Configure Git user.name/user.email to commit.')
+        if args.remote or args.create_remote or args.git_push:
+            ensure_remote(root, args.remote)
+        if args.git_push:
+            transfer(root, 'push', None, 'Initialize project')
+    except (Error, OSError):
+        setup_guidance(root, args.remote)
+        raise
     print(f'Created: {root}')
 
 def setup_main():
@@ -228,10 +306,9 @@ def setup_main():
     p.add_argument('--project', required=True)
     p.add_argument('--proj-dir', default='.')
     p.add_argument('--remote', help='Git remote URL to configure as origin')
-    p.add_argument('--git-push', action='store_true', help='Commit and push the new project (requires --remote)')
+    p.add_argument('--create-remote', action='store_true', help='Create a private GitHub repository if missing; defaults to authenticated account/PROJECT')
+    p.add_argument('--git-push', action='store_true', help='Ensure remote exists, commit and push the new project')
     args = p.parse_args()
-    if args.git_push and not args.remote:
-        p.error('--git-push requires --remote')
     run(lambda: scaffold(args))
 
 def update_main(root=None):

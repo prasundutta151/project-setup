@@ -5,6 +5,9 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
+import contextlib
+import io
 
 from project_setup import cli
 
@@ -15,6 +18,32 @@ class Versions(unittest.TestCase):
     def test_invalid(self):
         for value in ['../evil', '01.2.3', '1.100.0', '1.2', '-1.0.0', '1.2.3\n']:
             with self.assertRaises(cli.Error): cli.validate(value)
+
+class RemoteCreation(unittest.TestCase):
+    @patch.object(cli, 'git')
+    @patch.object(cli, 'github')
+    def test_missing_remote_created_private(self, gh, git):
+        gh.side_effect = ['alice', '', cli.Error('not found'), '']
+        cli.ensure_remote(Path('/tmp/demo'), None)
+        self.assertIn(unittest.mock.call(Path('/tmp/demo'), 'repo', 'create', 'alice/demo', '--private'), gh.call_args_list)
+        git.assert_called_once_with(Path('/tmp/demo'), 'remote', 'add', 'origin', 'https://github.com/alice/demo.git')
+    @patch.object(cli, 'git')
+    @patch.object(cli, 'github')
+    def test_existing_remote_not_created(self, gh, git):
+        cli.ensure_remote(Path('/tmp/demo'), 'git@github.com:alice/existing.git')
+        self.assertFalse(any('create' in c.args for c in gh.call_args_list))
+        gh.assert_any_call(Path('/tmp/demo'), 'repo', 'view', 'alice/existing', '--json', 'name')
+    @patch.object(cli, 'git')
+    @patch.object(cli, 'github', side_effect=cli.Error('not authenticated'))
+    def test_auth_failure_does_not_configure_remote(self, gh, git):
+        with self.assertRaises(cli.Error): cli.ensure_remote(Path('/tmp/demo'), None)
+        git.assert_not_called()
+    def test_guidance_uses_absolute_quoted_path(self):
+        output = io.StringIO()
+        with contextlib.redirect_stderr(output): cli.setup_guidance(Path('/tmp/my project'))
+        self.assertIn("git -C '/tmp/my project'", output.getvalue())
+        self.assertIn('gh auth login', output.getvalue())
+        self.assertIn('git config --global user.name', output.getvalue())
 
 class Integration(unittest.TestCase):
     def setUp(self):

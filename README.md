@@ -28,8 +28,22 @@ project-setup --project my-project --remote git@github.com:USER/REPO.git --git-p
 
 `--project` is required. `--proj-dir` defaults to the current directory. Missing parent
 directories are created automatically; an existing project directory is always refused, even if empty.
-Remote creation is left to your Git hosting service. With `--remote`, origin is
-configured; `--git-push` explicitly commits and pushes the new structure.
+For GitHub, `--remote` checks for the repository and creates it privately if missing.
+Use `--create-remote` without a URL to create `YOUR_ACCOUNT/PROJECT` using the
+account authenticated in GitHub CLI (`gh`). `--git-push` also ensures that remote
+exists, commits, and pushes, so a URL is optional:
+
+```sh
+project-setup --project my-project --git-push
+project-setup --project my-project --create-remote
+```
+
+GitHub provisioning requires `gh` and `gh auth login`. Existing repository visibility
+is preserved. Other Git hosts/local remotes are configured but not automatically
+provisioned. If Git initialization, remote creation, or push fails, the terminal
+prints numbered installation, identity, authentication, and recovery commands.
+These use absolute project paths and work from any directory. Files remain intact;
+do not rerun setup against that existing project.
 Git identity is inherited from your configuration; if missing, files remain staged
 and the command explains how to finish the commit. Git failures retain local files.
 
