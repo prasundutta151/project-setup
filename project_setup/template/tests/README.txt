@@ -1,0 +1,1 @@
+Add scientific and CLI tests as commands are implemented. Cover configuration precedence, JSON-relative paths, invalid inputs, false/zero values, and installed execution outside the project directory.

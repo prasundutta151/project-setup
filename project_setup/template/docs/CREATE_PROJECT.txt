@@ -1,0 +1,55 @@
+CREATE AN ASTRONOMY PROJECT FROM Model_Project
+
+Agent instructions:
+1. Locate the user's Documents/Model_Project directory. Start with ~/Documents;
+   if absent, ask for its location rather than searching unrelated directories.
+2. Read its AGENTS.md and docs/PROJECT_REQUIREMENTS.md. Creating a new project
+   does not require editing or acquiring the template's lock. If the template
+   is actively being edited, wait for a stable handoff before copying it.
+3. Use the project name and destination given by the user. If no destination
+   was given, use a sibling directory in Documents. Never merge into or overwrite
+   an existing directory without first inspecting it and resolving the intent.
+4. Before copying/customizing files, follow docs/GIT_SETUP.txt: check Git and
+   enclosing repositories, create the new destination and initialize its own Git
+   repository immediately. Show remote-link guidance if origin is absent; do not
+   block local setup on remote selection. Copy the template's tracked/source files and folder structure. Exclude .git,
+   .agent-state, .venv, __pycache__, bin, build, data, output, plot/generated and
+   version/dist. Never copy template lock ownership or Git history.
+5. Acquire a NEW lock in the new project using script/agent_lock.py. Replace
+   template-specific title, purpose and TODOs with known project facts. Replace
+   HANDOFF.md with this new project's actual state, retaining the handoff format.
+   Remove the copied HANDOFF metadata block (between agent-handoff markers).
+   Follow docs/CONTEXT_WORKFLOW.md; never copy a context cache.
+   Reset VERSION to 0.1.0 and CHANGELOG.txt to the new project's initial entry.
+   Keep developer/DEV_NOTES.md's format, replace Model_Project with the actual
+   project name in its title/introduction, remove template historical entries,
+   and write the new project's first entry with the user's actual request.
+   Stamp the new handoff. Review and commit the customized scaffold before
+   implementation, if Git identity exists.
+   Retain executable script/project-update and release-files.txt.
+6. Keep script/, version/, docs/, pipeline/, json/, plot/, developer/ and tests/. Replace
+   illustrative configurations with samples matching the actual commands; clearly
+   identify unavailable sample datasets. Retain the shared requirements.
+7. If implementation was requested, implement the science task and its CLI.
+   Otherwise finish the scaffold and record implementation as remaining work. Provide the user-local
+   installer/build instructions required by PROJECT_REQUIREMENTS.md. Do not
+   install placeholders or claim scientific code exists before implementation.
+8. Keep CLI help, essential setup facts and tests accurate. Generate HTML/TXT
+   user manuals only when explicitly requested through project-document, following
+   docs/DOCUMENTATION_RULES.md (GDP-derived format). Otherwise record documentation
+   pending. Verify implemented commands outside the project.
+9. Verify the repository initialized at step 4. Review and commit relevant
+   changes using the configured Git identity. Do not create a remote or push
+   unless the user supplies and authorizes that destination.
+10. Complete developer/DEV_NOTES.md and update HANDOFF.md with real results.
+    Stamp its new ID using agent_context.py before the final checkpoint. Release
+    the new project's lock last. Report the directory, command names, installation
+    state and commit outcome, including any blockers.
+
+USER PROMPT TO REUSE
+Find Model_Project in my Documents folder and use it as the template to create
+[PROJECT_NAME] in [DESTINATION, or Documents]. Follow AGENTS.md,
+docs/CREATE_PROJECT.txt and docs/PROJECT_REQUIREMENTS.md. The astronomy task is:
+[DESCRIBE TASK]. Use [LANGUAGE]. Create the required directories, executable
+commands, two JSON configuration inputs, on-demand documentation rules and local Git
+checkpoints. Preserve the template. Do not push until I specify a remote.

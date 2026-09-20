@@ -1,5 +1,8 @@
 """Portable project scaffolding and release management; Python 3.9+."""
+from __future__ import annotations
 import argparse
+import json
+import socket
 from datetime import datetime
 import fnmatch
 import os
@@ -13,153 +16,8 @@ import tarfile
 import tempfile
 
 VERSION_RE = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]?)\.(0|[1-9][0-9]?)\Z')
-DIRS = ('script', 'docs', 'data', 'versions', 'developer', 'testdirectory')
-IGNORE = '.git/\nversions/*\n!versions/.gitkeep\n__pycache__/\n*.py[cod]\n.venv/\nbuild/\ndist/\n*.egg-info/\n.DS_Store\n.env\n.env.*\n'
-RULES = '''# Guidelines & Rules for Coding Agents
+DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 'tests', 'data')
 
-This document defines mandatory guidelines for all AI coding assistants (Gemini, Codex, Claude, Cursor, Copilot, etc.) and human developers contributing to the {project} project.
-
-Load this file once at the start of each conversation/session. Retain its rules in context; reload only when this file changes or context is lost.
-
----
-
-## 1. Developer Log Maintenance (`developer/DEV_NOTES.md`)
-
-Whenever a user request or task is given:
-1. **Freshen Up the Prompt**: Clean up, structure, and refine the raw prompt into an unambiguous, professional specification.
-2. **Append to `developer/DEV_NOTES.md`**: Add a new entry at the top of the log using the established project schema:
-
-```markdown
-## YYYY-MM-DD HH:MM:SS TZ
-
-Prompt / Request
-- Refined and structured description of the requested task.
-
-Changes Made
-- Concrete summary of code, configuration, or documentation modifications.
-
-Verification
-- Exact commands, tests, or inspection steps executed to verify correctness.
-
-Notes
-- Relevant context, edge cases, follow-ups, or cautions.
-```
-
----
-
-## 2. Code Style & Naming Conventions (`script/`)
-
-All new code and modifications in `script/` must strictly conform to existing codebase patterns:
-
-1. **Language & Environment**:
-   - Python 3.9+ compatible.
-   - Always include `from __future__ import annotations` at the top of Python modules.
-   - Use standard library modules whenever possible (`pathlib.Path`, `argparse`, `json`, `subprocess`, `sys`, `shutil`, `typing`).
-
-2. **File Naming & Executables**:
-   - User-facing CLI tools in `script/` use the `{project}-<action>` pattern without `.py` extension (e.g. `script/{project}-setup`). The generated `script/project-update` is the standard updater and keeps its name.
-   - CLI scripts must begin with `#!/usr/bin/env python3` and maintain executable permissions.
-
-3. **Variable & Function Naming**:
-   - **Functions & Methods**: `snake_case` (e.g. `load_config()`, `resolve_setup_file()`, `project_root()`).
-   - **Variables & Arguments**: `snake_case` (e.g. `workdir`, `fitspath`, `mspath`, `target_dirs`).
-   - **Constants & Configuration Sets**: `UPPER_SNAKE_CASE` (e.g. `CONFIG_NAME`, `WORKDIR_SUBDIRS`, `CLEAN_TARGETS`).
-   - **Classes**: `PascalCase`.
-
-4. **Type Annotations**:
-   - Use comprehensive type annotations on all function signatures (`Path`, `Dict[str, object]`, `List[str]`, `str | None`, `bool`).
-
-5. **Robust File Operations**:
-   - Use `pathlib.Path` for filesystem operations.
-   - Use atomic write patterns (write to `.tmp` then `replace`) when saving configuration JSON files.
-
-6. **CLI Standards**:
-   - Use `argparse` with descriptive flag names matching existing commands (e.g. `--fitspath`, `--mspath`, `--workdir`, `--clean`, `--dry-run`, `--config-file`, `--show`).
-   - Provide clear, user-friendly help strings and stdout status formatting.
-
----
-
-## 3. Multi-Agent Coordination & Safety (.agent_lock Protocol)
-
-To prevent simultaneous execution, race conditions, and broken Git states when working with multiple AI agents (Gemini, Codex, Claude, etc.):
-
-1. **The `.agent_lock` Protocol**:
-   - The root file `.agent_lock` acts as a mutual-exclusion lock for all coding agents and Git operations.
-   - **Default / Idle State (`True`)**: By default, when no agent is actively executing, `.agent_lock` contains `True` (meaning available / unlocked).
-   - **Acquiring the Lock (`False`)**: Whenever an agent begins a task or prompt:
-     - Check `.agent_lock`; initialize it to `True` if absent before starting work.
-     - If it is `True`, immediately set the file content to `False` to signal that an agent is actively working.
-     - If it is `False`, another agent is currently running; wait or abort to avoid conflicts.
-   - **Releasing the Lock (`True`)**: When the agent finishes its task, verifications, and developer-log updates, it must reset `.agent_lock` back to `True`.
-
-2. **Git & Pipeline Operations**:
-   - The same `.agent_lock` check applies to any Git commands (`git add`, `git commit`, `git checkout`, `git push`) and pipeline executions to guarantee mutual exclusion.
-
-3. **Sequential Execution & Fresh State**:
-   - Always operate sequentially, never running prompts in parallel across multiple tools.
-   - Read fresh file contents from disk before making edits to avoid stale context.
-   - Create clean Git commits or stashes before switching tools.
-
-4. **Git Staging & Release Tar Boundaries**:
-   - The `developer/` directory (including `DEV_NOTES.md`, `AGENT_RULES.md`, and `developer/script/`) as well as `guide/` are tracked in Git and staged/committed whenever Git actions (`script/project-update --git-push`, `git add`) are performed.
-   - The `developer/` and `guide/` directories are **strictly excluded** from release distribution archives created with `--release` (`versions/{project}-*.tar.gz`); keep these paths out of `release-files.txt`.
-
----
-
-## 4. Temporary Developer Scripts (`developer/script/`)
-
-Create a dedicated subdirectory `developer/script/` when needed for temporary scripts, scratch experiments, and prototyping tools:
-
-1. **Relaxed Multi-Agent Read/Edit Concurrency**:
-   - Files within `developer/script/` may be accessed in **read-only mode** by one agent while another agent modifies a **different file** in the same folder.
-   - Multiple agents must never edit or overwrite the same temporary script simultaneously.
-
-2. **Strict Scope Isolation**:
-   - This relaxed concurrency exception applies **strictly and exclusively to `developer/script/`**.
-   - Main production scripts (`script/`), pipeline definitions (`pipelines/`), documentation (`docs/`), and configuration/root files remain strictly bound to Section 3: **only one agent may execute at any given time** under the mutual-exclusion `.agent_lock` protocol.
-
----
-
-## 5. Terminal Session Permission Lifecycle & Workspace Boundaries (Gemini)
-
-To ensure seamless in-session developer workflow while maintaining strict workspace security:
-
-1. **Session-Level Initial Authorization**:
-   - When a Gemini session is opened in the terminal, permission is requested and established at the beginning of the session.
-
-2. **Autonomous In-Session Execution Within Parent Directory**:
-   - Once authorized, between the session start and its conclusion, the agent operates autonomously without repeatedly asking for per-action permissions for standard operations (reading, writing, editing files, running project commands, and running tests), **as long as all work is strictly confined to the project parent directory** (`{project_root}`).
-
-3. **Strict Directory Boundary Enforcement**:
-   - The agent is strictly prohibited from modifying, reading, or running commands on files outside the parent project root directory without explicit user instruction.
-
-4. **Session Exit & Automatic Permission Revocation**:
-   - Upon exiting, closing, or terminating the session, all granted permissions expire immediately.
-   - The agent possesses no ongoing authority or permission to perform any actions once the session has ended.
-
-
-'''
-NOTES = '''# {project} Developer Notes
-
-This file is the running developer log for {project}. Add a new timestamped entry whenever the code, plans, packaging, or workflow changes.
-
-Entry format:
-```text
-## YYYY-MM-DD HH:MM:SS TZ
-
-Prompt / Request
-- Polished summary of what was asked.
-
-Changes Made
-- What changed in code, plans, docs, data products, or packaging.
-
-Verification
-- Commands or checks run.
-
-Notes
-- Follow-up context, assumptions, or cautions.
-```
-'''
 
 class Error(Exception):
     pass
@@ -192,12 +50,16 @@ def next_version(current, action):
         a, b, c = a + 1, 0, 0
     return f'{a}.{b}.{c}'
 
+def version_path(root):
+    modern = root / 'version' / 'VERSION'
+    return modern if modern.is_file() else root / 'VERSION'
+
 def write_version(root, version):
-    path = root / 'VERSION'
+    path = version_path(root)
     history = path.read_text().splitlines()
     if history[0] == version:
         return
-    fd, name = tempfile.mkstemp(prefix='.VERSION-', dir=root)
+    fd, name = tempfile.mkstemp(prefix='.VERSION-', dir=path.parent)
     try:
         with os.fdopen(fd, 'w') as f:
             f.write('\n'.join([version, *history]) + '\n')
@@ -230,7 +92,7 @@ def transfer(root, operation, target, message):
         else:
             exists = git(root, 'tag', '--list', tag)
             if not exists:
-                if (root / 'VERSION').read_text().splitlines()[0] != target:
+                if version_path(root).read_text().splitlines()[0] != target:
                     raise Error('An unpublished version must match VERSION; use --version first.')
                 commit(root, message)
                 git(root, 'tag', '-a', tag, '-m', message)
@@ -269,16 +131,16 @@ def release(root, version, message):
             raise Error(f'Missing release path: {line}')
         for p in [source, *source.rglob('*')] if source.is_dir() else [source]:
             relative = p.relative_to(root)
-            if any(part in ('versions', '.git', '__pycache__', '.venv', 'build', 'dist') or part.endswith('.egg-info') for part in relative.parts):
+            if any(part in ('versions', '.git', '.agent-state', '__pycache__', '.venv', 'build', 'dist') or part.endswith('.egg-info') for part in relative.parts):
                 continue
             if p.is_symlink():
                 raise Error(f'Release symlinks are refused: {relative}')
-            if p.is_file() and not any(fnmatch.fnmatch(p.name, pattern) for pattern in ('.env', '.env.*', '*.pyc', '*.pyo', '.DS_Store')):
+            if p.is_file() and not any(fnmatch.fnmatch(p.name, pattern) for pattern in ('.env', '.env.*', '.agent_lock', '*.pyc', '*.pyo', '.DS_Store')):
                 selected.add(relative)
-    destination = root / 'versions'
+    destination = root / 'version' / 'dist' if (root / 'version' / 'VERSION').is_file() else root / 'versions'
     if destination.is_symlink():
         raise Error('versions/ must not be a symlink.')
-    destination.mkdir(exist_ok=True)
+    destination.mkdir(parents=True, exist_ok=True)
     name = f'{root.name}-{version}'
     stage, archive = destination / name, destination / (name + '.tar.gz')
     if stage.exists() or archive.exists():
@@ -373,32 +235,58 @@ Run these steps in a terminal; the commands work from any directory.
         print(f'Requested remote: {remote} (use its owner/name in steps 5–6).', file=sys.stderr)
 
 
+def write_updater(root):
+    updater = root / 'script/project-update'
+    updater.parent.mkdir(parents=True, exist_ok=True)
+    updater.write_text('#!/usr/bin/env python3\n' + Path(__file__).read_text() + '\nif __name__ == "__main__":\n    update_main(root=Path(__file__).resolve().parent.parent)\n')
+    updater.chmod(0o755)
+
+
 def scaffold(args):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project):
         raise Error('PROJECT must be a single directory name starting with a letter or digit.')
     parent = Path(args.proj_dir).expanduser().resolve()
     parent.mkdir(parents=True, exist_ok=True)
+    if git(parent, 'rev-parse', '--show-toplevel', check=False):
+        raise Error('Choose a destination outside an existing Git repository.')
     root = parent / args.project
-    root.mkdir()  # exclusive: never overwrite or merge
-    for directory in DIRS:
-        (root / directory).mkdir()
-        (root / directory / '.gitkeep').touch()
-    (root / 'VERSION').write_text('0.0.1\n')
-    (root / '.gitignore').write_text(IGNORE)
-    (root / 'developer/DEV_NOTES.md').write_text(NOTES.format(project=args.project))
-    (root / 'developer/AGENT_RULES.md').write_text(RULES.replace("{project}", args.project).replace("{project_root}", str(root)))
-    (root / 'README.md').write_text(f'# {args.project}\n\nDescribe installation and usage here.\n')
-    (root / 'release-files.txt').write_text('VERSION\nREADME.md\nscript\ndocs\ndata\nrelease-files.txt\n')
-    updater = root / 'script/project-update'
-    updater.write_text('#!/usr/bin/env python3\n' + Path(__file__).read_text() + '\nif __name__ == "__main__":\n    update_main(root=Path(__file__).resolve().parent.parent)\n')
-    updater.chmod(0o755)
+    root.mkdir()  # exclusive, never overwrite
     try:
-        git(root, 'init', '-b', 'main')
+        git(root, 'init', '-b', 'main')  # first operation before scaffold copying
+        template = Path(__file__).parent / 'template'
+        if not template.is_dir():
+            raise Error('Bundled template missing; reinstall project-setup.')
+        shutil.copytree(template, root, dirs_exist_ok=True)
+        for directory in DIRS:
+            (root / directory).mkdir(exist_ok=True)
+            if not any((root / directory).iterdir()):
+                (root / directory / '.gitkeep').touch()
+        objective = args.objective or 'Define the astronomy objective with the user.'
+        for name in ('README.md', 'HANDOFF.md', 'developer/DEV_NOTES.md'):
+            f = root / name
+            f.write_text(f.read_text().replace('__PROJECT__', args.project).replace('__OBJECTIVE__', objective))
+        rules = root / 'AGENTS.md'
+        rules.write_text(rules.read_text().replace('TODO — specify the scientific task.', objective))
+        # Compatibility pointer; there is only one authoritative rule set.
+        (root / 'developer/AGENT_RULES.md').write_text('Read and follow ../AGENTS.md at the project root. Do not use the old boolean .agent_lock protocol.\n')
+        (root / 'startup-prompt.txt').write_text('Continue this project from the directory containing this file. Read AGENTS.md and docs/CONTEXT_WORKFLOW.md. Acquire a fresh session lock, check context and read HANDOFF.md and recent developer/DEV_NOTES.md as required. Follow docs/DOCUMENTATION_RULES.md; generate manuals only on request. Ask for missing science requirements and perform the user-requested task. Do not recreate this project or copy Model_Project again.\n')
+        (root / 'release-files.txt').write_text('version/VERSION\nversion/CHANGELOG.txt\nREADME.md\nscript\ndocs\njson\npipeline\nplot\nrelease-files.txt\n')
+        write_updater(root)
+        stamp = datetime.now().astimezone().isoformat()
+        notes = root / 'developer/DEV_NOTES.md'
+        with notes.open('a') as f:
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.0'], capture_output=True, text=True, check=True)
+        session = json.loads(lock_result.stdout)['session_id']
+        try:
+            subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
+        finally:
+            subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'release', '--session', session], capture_output=True, text=True, check=True)
         git(root, 'add', '--all')
         if git(root, 'var', 'GIT_AUTHOR_IDENT', check=False):
-            commit(root, 'Initialize project')
+            commit(root, 'Initialize agent-aware project')
         else:
-            print('Git initialized and files staged. Configure Git user.name/user.email to commit.')
+            print('Git initialized and files staged. Set repository-local git config user.name and user.email, then commit.')
         if args.remote or args.create_remote or args.git_push:
             ensure_remote(root, args.remote)
         if args.git_push:
@@ -407,6 +295,26 @@ def scaffold(args):
         setup_guidance(root, args.remote)
         raise
     print(f'Created: {root}')
+    print(f'Next: ask your agent to read {root / "startup-prompt.txt"} and follow it.')
+    if not git(root, 'remote', 'get-url', 'origin', check=False):
+        print('No remote configured. Follow these steps:')
+        print((root / 'docs/GIT_SETUP.txt').read_text())
+
+
+def startup_guide():
+    print("""project-setup 1.0.0 — agent-aware projects for macOS and Linux
+1. Choose a project name, parent directory and astronomy objective.
+2. Create it (no existing files are overwritten):
+   project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
+3. Ask any coding agent: Read /absolute/project/path/startup-prompt.txt and follow it.
+4. The agent reads rules, acquires ownership, checks context and records development notes.
+5. At handoff: finish notes, stamp handoff, commit, synchronize, then release ownership.
+6. For remote setup: git-setup guide (or project-setup --git-setup guide).
+7. For versions/releases: /absolute/project/path/script/project-update --help.
+8. User manuals are generated only on an explicit external project-document request.
+No service or background agent is started. Python 3.9+ and Git 2.28+ are required.
+""")
+
 
 def setup_main():
     if len(sys.argv) > 1 and sys.argv[1] == '--git-setup':
@@ -414,18 +322,26 @@ def setup_main():
         main(sys.argv[2:])
         return
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
-    p.add_argument('--project', required=True)
+    p.add_argument('--project')
+    p.add_argument('--guide', action='store_true', help='Show numbered agent project setup instructions')
+    p.add_argument('--objective', help='Scientific objective recorded in the new project')
     p.add_argument('--proj-dir', default='.')
     p.add_argument('--remote', help='Git remote URL to configure as origin')
     p.add_argument('--create-remote', action='store_true', help='Create a private GitHub repository if missing; defaults to authenticated account/PROJECT')
     p.add_argument('--git-push', action='store_true', help='Ensure remote exists, commit and push the new project')
     args = p.parse_args()
+    if args.guide or len(sys.argv) == 1:
+        startup_guide()
+        return
+    if not args.project:
+        p.error('--project is required to create a project; run without arguments for the guide')
     run(lambda: scaffold(args))
 
 def update_main(root=None):
     p = argparse.ArgumentParser(description='Update version, release, and synchronize Git, in that order (pull runs first).')
     p.add_argument('--version', nargs='?', const='minor')
     p.add_argument('--release', action='store_true')
+    p.add_argument('--session', help='Owner session ID required when an agent lock is active')
     p.add_argument('--git-push', nargs='?', const='')
     p.add_argument('--git-pull', nargs='?', const='')
     p.add_argument('--massage', '--message', dest='message', nargs='?', const=None)
@@ -440,10 +356,18 @@ def update_main(root=None):
         if args.git_pull is None and args.git_push is None and args.version is None and not args.release:
             p.print_help()
             return
+        lock = project / '.agent-state/lock'
+        if lock.exists():
+            try:
+                owner = json.loads((lock / 'owner.json').read_text())
+            except (OSError, ValueError):
+                raise Error('Lock metadata unavailable; recover ownership before updating.')
+            if owner.get('session_id') != args.session or owner.get('host') != socket.gethostname():
+                raise Error('Active agent lock: supply the owning --session on the same computer.')
         message = args.message if args.message is not None else datetime.now().strftime('%d:%m:%y|%H-%M-%S')
         if args.git_pull is not None:
             transfer(project, 'pull', args.git_pull, message)
-        version = validate((project / 'VERSION').read_text().splitlines()[0])
+        version = validate(version_path(project).read_text().splitlines()[0])
         if args.version is not None:
             version = next_version(version, args.version)
             write_version(project, version)
@@ -457,6 +381,6 @@ def update_main(root=None):
 def run(action):
     try:
         action()
-    except (Error, OSError, IndexError) as e:
+    except (Error, OSError, IndexError, subprocess.CalledProcessError) as e:
         print(f'Error: {e}', file=sys.stderr)
         sys.exit(1)

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "example_only": true,
+  "description": "Illustration only: astro-example is not implemented; example.fits is not supplied. Paths are relative to this file.",
+  "steps": [
+    {
+      "name": "example-analysis",
+      "command": "astro-example",
+      "setup_file": "../json/setup.example.json",
+      "parameter_file": "../json/parameters.example.json"
+    }
+  ]
+}

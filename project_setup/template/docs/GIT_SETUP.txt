@@ -1,0 +1,53 @@
+GIT AT PROJECT CREATION
+
+Based on Documents/project-setup/docs/usage.md and project_setup/gitsetup.py.
+This guide is self-contained; future computers need not contain those references.
+
+Local repository (required immediately):
+1. Check Git is installed: git --version. If missing, report it and provide the
+   appropriate install instructions; do not invent success or run sudo silently.
+2. For a NEW project, create the destination and immediately run:
+     git -C /absolute/project/path init -b main
+   Check for an enclosing repository first; do not accidentally create a project
+   inside another repository. Preserve any existing project/repository instead.
+   Never copy Model_Project/.git. Initialize before implementation or scaffolding
+   customization; then copy allowed template files and acquire the new lock.
+3. Check configured identity. If missing, ask for the user's real name/email and
+   use repository-local configuration by default:
+     git config user.name "YOUR NAME"
+     git config user.email "YOUR EMAIL"
+   Do not invent an identity or change global preferences without instruction.
+4. Review the scaffold and ignore rules, stage explicit relevant paths and make
+   the initial scaffold commit before implementation. Missing identity blocks
+   commits, not creation of the repository; record the blocker accurately.
+
+When no remote link exists, show these steps; do not silently create or push:
+1. Check existing links: git remote -v
+2. Ask which host/account and repository to use, and whether creation/push is
+   wanted, unless already supplied. Local work can continue without a remote.
+3. Existing remote repository: use its verified clone URL. New GitHub repository:
+   create a private empty repository (no README/license initialization) through
+   GitHub's UI, or the authenticated CLI if authorized. Choose the user's actual
+   owner/name; never guess or put credentials in a URL.
+4. For HTTPS GitHub CLI authentication, the user can run:
+     gh auth login --hostname github.com --git-protocol https --web
+     gh auth setup-git
+     gh auth status
+   If unavailable, explain installation or use the host's supported Git login.
+5. From the project directory, attach the supplied URL only if origin is absent:
+     git remote add origin VERIFIED_REPOSITORY_URL
+   If origin exists, inspect it; never overwrite it automatically.
+6. Verify the current branch and a successful local commit, then, when authorized:
+     git push -u origin ACTUAL_BRANCH_NAME
+   Do not use a literal placeholder or assume an existing project's branch is main.
+7. If the remote already contains history, fetch and inspect it before reconciling;
+   never force-push or discard changes to bypass rejection. Report failures.
+8. On another computer, clone the verified repository URL; thereafter inspect
+   local changes and use git pull --ff-only for straightforward handoffs. Diverged
+   histories require review. Do not run Git on two iCloud-synced copies concurrently.
+
+If installed, `git-setup guide` or `project-setup --git-setup guide` provides the
+existing utility's interactive setup guidance. Inspect --help before using its
+mutating commands: its update helper can stage all nonignored files and push.
+This template instead requires reviewed, relevant-path checkpoints. Tools and
+external accounts are not configured merely by copying these instructions.

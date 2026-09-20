@@ -19,6 +19,28 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-20 11:47:14 UTC
+
+Prompt / Request
+- Publish a public major release of project-setup for Linux/macOS with agent-aware project creation, bundled Model_Project rules and a consistent standalone updater in every generated script directory.
+
+Changes Made
+- Version 1.0.0; no-argument setup guide, scientific objective option, immediate Git initialization and remote setup guidance.
+- Bundled portable template with fresh development history, handoff metadata, context cache tools and GDP-style on-demand documentation contract.
+- Standalone updater supports version/VERSION and version/dist plus legacy root VERSION/versions; active ownership checks require --session.
+- Updated stdlib/wheel packaging, installation guide, CI and archive distribution.
+
+Verification
+- 28 project/Git/updater tests and 3 context integration tests passed locally.
+- Extracted archive installed to an isolated prefix with spaces; scaffold and standalone updater verified after deleting installed package.
+- Built and installed wheel in isolation; template assets and generated updater verified.
+- Linux tested locally; macOS/Python matrix checked through remote CI at publication.
+
+Notes
+- Existing public repository retained. No unrelated existing project migrated.
+- project-document remains an external tool; it is not bundled.
+- Template development histories/private runtime state excluded from generated projects.
+
 ## 2026-09-17 00:17:34 IST
 
 Prompt / Request

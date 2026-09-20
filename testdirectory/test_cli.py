@@ -67,9 +67,38 @@ class Integration(unittest.TestCase):
         self.git('remote','add','origin',str(remote))
     def test_scaffold_and_refusal(self):
         for name in cli.DIRS: self.assertTrue((self.root/name).is_dir())
-        self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
+        self.assertEqual((self.root/'version/VERSION').read_text(),'0.1.0\n')
         self.call(sys.executable,'-c','from project_setup.cli import setup_main; setup_main()','--project','demo','--proj-dir',str(self.base),ok=False)
-        self.assertEqual((self.root/'VERSION').read_text(),'0.0.1\n')
+        self.assertEqual((self.root/'version/VERSION').read_text(),'0.1.0\n')
+    def test_new_agent_files_and_standalone_updater(self):
+        for name in ['AGENTS.md', 'HANDOFF.md', 'startup-prompt.txt', 'script/agent_context.py',
+                     'script/agent_lock.py', 'developer/DEV_NOTES.md', 'docs/DOCUMENTATION_RULES.md']:
+            self.assertTrue((self.root/name).is_file(), name)
+        notes = (self.root/'developer/DEV_NOTES.md').read_text()
+        self.assertIn('# demo Developer Notes', notes)
+        self.assertNotIn('Model_Project Developer Notes', notes)
+        self.assertNotIn('astrolab-pd', notes)
+        self.assertFalse((self.root/'.agent-state/lock').exists())
+        self.assertIn('handoff_id', (self.root/'HANDOFF.md').read_text())
+        self.assertEqual(self.git('status','--porcelain'), '')
+        self.update('--version','major')
+        self.assertEqual((self.root/'version/VERSION').read_text().splitlines()[0], '1.0.0')
+
+    def test_legacy_version_layout(self):
+        (self.root/'version/VERSION').rename(self.root/'VERSION')
+        (self.root/'release-files.txt').write_text('VERSION\nscript\n')
+        self.update('--version','--release')
+        self.assertEqual((self.root/'VERSION').read_text().splitlines()[0], '0.1.1')
+        self.assertTrue((self.root/'versions/demo-0.1.1.tar.gz').exists())
+
+    def test_updater_respects_active_lock(self):
+        import json
+        lock = self.call(sys.executable, str(self.root/'script/agent_lock.py'), 'acquire', '--agent', 'test')
+        session = json.loads(lock.stdout)['session_id']
+        self.update('--version',ok=False)
+        self.update('--version','--session',session)
+        self.call(sys.executable, str(self.root/'script/agent_lock.py'), 'release', '--session', session)
+
     def test_first_push_on_unborn_branch(self):
         self.remote()
         # Remove the sole test commit's branch ref to recreate an unborn branch.
@@ -81,7 +110,7 @@ class Integration(unittest.TestCase):
         parent = self.base/'nested'/'parent'
         self.call(sys.executable, '-c', 'from project_setup.cli import setup_main; setup_main()',
                   '--project', 'created', '--proj-dir', str(parent))
-        self.assertEqual((parent/'created/VERSION').read_text(), '0.0.1\n')
+        self.assertEqual((parent/'created/version/VERSION').read_text(), '0.1.0\n')
     def test_parent_is_file(self):
         parent = self.base/'file'
         parent.write_text('preserve')
@@ -92,8 +121,8 @@ class Integration(unittest.TestCase):
         self.update('--version')
         self.update('--version','0.99.99')
         self.update('--version','--release','--massage','A release')
-        self.assertEqual((self.root/'VERSION').read_text(),'1.0.0\n0.99.99\n0.0.2\n0.0.1\n')
-        archive = self.root/'versions/demo-1.0.0.tar.gz'
+        self.assertEqual((self.root/'version/VERSION').read_text(),'1.0.0\n0.99.99\n0.1.1\n0.1.0\n')
+        archive = self.root/'version/dist/demo-1.0.0.tar.gz'
         with tarfile.open(archive) as t:
             names = t.getnames()
             self.assertIn('demo-1.0.0/script/project-update', names)
@@ -117,15 +146,15 @@ class Integration(unittest.TestCase):
     def test_default_parent(self):
         code = 'import sys; sys.path.insert(0, ' + repr(str(Path(cli.__file__).resolve().parent.parent)) + '); from project_setup.cli import setup_main; setup_main()'
         self.call(sys.executable,'-c',code,'--project','default-parent',cwd=self.base)
-        self.assertTrue((self.base/'default-parent/VERSION').is_file())
+        self.assertTrue((self.base/'default-parent/version/VERSION').is_file())
         self.call(sys.executable,'-c',code,'--project','../escape',cwd=self.base,ok=False)
     def test_push_pull_tags_and_branch(self):
         self.remote()
         self.update('--version','--release','--git-push','--message','publish')
         self.assertEqual(self.git('log','-1','--format=%s'),'publish')
-        self.update('--git-push','0.0.2')
+        self.update('--git-push','0.1.1')
         before = self.git('rev-parse','HEAD')
-        self.update('--git-pull','0.0.2')
+        self.update('--git-pull','0.1.1')
         self.assertEqual(before,self.git('rev-parse','HEAD'))
         self.assertEqual(self.git('branch','--show-current'),'main')
         self.git('branch','other')

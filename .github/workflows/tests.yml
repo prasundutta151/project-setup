@@ -18,3 +18,5 @@ jobs:
 
       - run: '"$RUNNER_TEMP/project-setup-install/bin/git-setup" guide'
       - run: '"$RUNNER_TEMP/project-setup-install/bin/project-setup" --git-setup guide'
+
+      - run: python -m unittest discover -s project_setup/template/tests -v

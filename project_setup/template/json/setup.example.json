@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "input_file": "../data/example.fits",
+  "output_path": "../output/example",
+  "plot_path": "../plot/generated/example",
+  "parameter_file": "parameters.example.json"
+}

@@ -1,0 +1,21 @@
+# Local session coordination (never share through Git)
+.agent-state/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Python / macOS local artifacts
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+
+# Generated executables, observations, and products
+/bin/
+/build/
+/data/
+/output/
+/plot/generated/
+/version/dist/

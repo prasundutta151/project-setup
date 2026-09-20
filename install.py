@@ -17,6 +17,8 @@ for name in ('project-setup', 'project-update', 'git-setup'):
     if path.exists() and (path.is_symlink() or '# project-setup managed launcher' not in path.read_text()):
         p.error(f'Refusing to overwrite unrelated command: {path}')
 target.mkdir(parents=True, exist_ok=True)
+shutil.copytree(source/'template', target/'template', dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'))
 for file in source.glob('*.py'): shutil.copy2(file,target/file.name)
 bin_dir.mkdir(parents=True, exist_ok=True)
 for name, module, function in [('project-setup','cli','setup_main'),('project-update','cli','update_main'),('git-setup','gitsetup','main')]:

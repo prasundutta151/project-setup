@@ -1,0 +1,80 @@
+ASTRONOMY PROJECT STARTUP
+
+Treat this file as my instruction to carry out project setup, not merely to
+summarize this prompt. Follow my current conversation instructions if they
+change any defaults below.
+
+1. Locate the template
+Use the Model_Project directory containing this prompt, normally
+~/Documents/Model_Project. Expand ~ for the current user's home directory.
+Read AGENTS.md, docs/CREATE_PROJECT.txt and docs/PROJECT_REQUIREMENTS.md there.
+Read docs/CONTEXT_WORKFLOW.md, docs/DOCUMENTATION_RULES.md and docs/GIT_SETUP.txt.
+Read docs/PLATFORM_SETUP.md when configuring agent startup instructions.
+Do not modify the template while creating another project. If you cannot access
+these files, explain which path is unavailable and ask for the correct location.
+
+2. Establish the project
+Use the project name, astronomy objective, language and destination already
+provided in the conversation. Do not ask again for details already supplied.
+If the name or objective is missing, ask for both in one concise question before
+creating the project. Default the destination to ~/Documents/<PROJECT_NAME>.
+Default to Python 3 unless the task or user calls for Swift, C++ or shell;
+state this assumption. Ask about scientific requirements only where the answer
+is needed to avoid inventing scientific behavior. Do not treat silence as an
+answer to a required question.
+
+3. Create or resume safely
+For a new directory, follow docs/CREATE_PROJECT.txt and initialize its own Git
+repository immediately, before copying/customizing the scaffold. Copy the template's source
+files, excluding its Git history, lock state, environments, generated output and
+observations. Create script/, version/, docs/, pipeline/, json/, plot/, developer/
+and tests/.
+Give the new project its own lock; preserve its newly initialized Git repository.
+Remove copied handoff metadata and use a fresh session/context baseline. Customize its project
+facts, README, HANDOFF and initial version metadata. Initialize
+ developer/DEV_NOTES.md with the actual project name and its own creation entry,
+retaining the template format but not its historical entries.
+If the destination already exists, inspect its instructions, Git status and
+handoff and recent developer/DEV_NOTES.md entries first. Resume it only if the user intended that existing project;
+otherwise ask whether to resume or use another directory. Never overwrite or
+merge the template blindly into existing work.
+Acquire the destination project's lock before editing its contents, following
+AGENTS.md. Do not take or copy the template's lock for a new project.
+
+4. Complete the requested scope
+A request to set up a project authorizes scaffolding, configuration examples,
+documentation and local Git initialization/checkpointing; it does not by itself
+request a complete scientific application. If I also ask for implementation,
+continue through implementation and validation within that requested scope.
+For setup only, record unimplemented commands and tests honestly in HANDOFF.md.
+
+Follow the astronomy contract, including:
+- Scientific commands in script/ with a documented user-local installer/build
+  process so installed commands work from any working directory.
+- Separate --setup-file and --parameter-file JSON inputs, documented precedence,
+  path resolution, validation, --help, --version and --print-config.
+- Sample setup/parameter JSON, a clearly labelled sample pipeline, and sample
+  plots when an implemented task can actually generate them. Do not invent data
+  products or install placeholder scientific commands.
+- Maintain CLI help, scientific conventions and tests. Generate HTML/TXT manuals
+  only on an explicit project-document request, following DOCUMENTATION_RULES.md;
+  otherwise record pending documentation. Keep version metadata accurate.
+- Follow CONTEXT_WORKFLOW.md for state checks, conditional rereading and attributed
+  handoff IDs. New sessions always read context; unchanged sessions need not.
+- Follow GIT_SETUP.txt to give remote-link setup steps when origin is absent.
+- developer/DEV_NOTES.md entries recording actual user prompts, objectives,
+  timestamp/timezone, agent/version/model when known, computer, changes and checks.
+  Preserve existing history and redact secrets. Follow the project log format.
+- Reviewed local Git checkpoints; no guessed remote, unsolicited push, deployment
+  or shell-startup changes. Preserve unrelated files and existing commands.
+
+5. Verify and hand over
+Check the folder structure, JSON syntax and references, documentation and Git
+state. For implemented commands, test configuration behavior and execution from
+outside the project after installation. Report tests actually run and anything
+not verified. Stop modifying background tasks, complete developer/DEV_NOTES.md,
+update HANDOFF.md, stamp its fresh ID using agent_context.py, then commit relevant
+changes using the configured Git identity, and release the project lock last.
+Report the project path, what was created, command/installation status, Git
+checkpoint outcome and the next action. Do not claim an upload or installation
+that did not happen.

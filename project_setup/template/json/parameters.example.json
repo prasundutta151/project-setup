@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "parameters": {
+    "sigma_threshold": 3.0,
+    "max_iterations": 5,
+    "overwrite": false
+  }
+}
