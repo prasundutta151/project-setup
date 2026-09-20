@@ -1,4 +1,4 @@
-# project-setup 1.0.0
+# project-setup 1.0.1
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
 `project-setup` without arguments for step-by-step instructions. The software
@@ -13,7 +13,7 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.0.0
+git checkout v1.0.1
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
@@ -219,3 +219,24 @@ New projects use the agent-aware structure and start at 0.1.0. The old root VERS
 layout remains supported by the installed updater. Back up and review an existing
 project before deliberately replacing its standalone updater; never regenerate a
 scaffold over existing work. No boolean .agent_lock is used in new projects.
+
+## Manual lock commands
+
+```sh
+project-update --lock acquire
+project-update --lock aquire   # accepted spelling alias
+project-update --lock status
+project-update --lock release
+```
+
+The installed command uses the current Git repository. To work from anywhere,
+use /absolute/project/script/project-update instead. Acquisition prints a fresh
+session ID; --agent NAME and --agent-version VERSION label its owner. This is
+the same .agent-state/lock used by agent_lock.py. Run lock commands separately
+from version, release and Git operations.
+
+Interactive release displays ownership and asks you to stop the writer, then
+type release. Agents/scripts must supply --session OWNER_SESSION_ID; wrong
+sessions, foreign computers and corrupt metadata are refused. An already unlocked
+project reports UNLOCKED. No automatic timeout or force release is introduced.
+The old boolean .agent_lock file is not managed by these commands.

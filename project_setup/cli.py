@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import socket
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 import fnmatch
 import os
 from pathlib import Path
@@ -275,8 +276,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.0'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.1; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.1'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -302,7 +303,7 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.0.0 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.0.1 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -337,10 +338,74 @@ def setup_main():
         p.error('--project is required to create a project; run without arguments for the guide')
     run(lambda: scaffold(args))
 
+def manage_lock(project: Path, action: str, session: str | None,
+                agent: str, agent_version: str) -> None:
+    """Manage the same cooperative lock used by agent_lock.py."""
+    lock = project / '.agent-state/lock'
+    owner_file = lock / 'owner.json'
+    if action in ('acquire', 'aquire'):
+        if session:
+            raise Error('Acquire creates a fresh session; do not supply --session.')
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            lock.mkdir()
+        except FileExistsError:
+            raise Error('Project is already locked. Inspect with --lock status; do not overwrite ownership.')
+        owner = {'agent': agent, 'agent_version': agent_version,
+                 'session_id': str(uuid.uuid4()), 'host': socket.gethostname(),
+                 'started_utc': datetime.now(timezone.utc).isoformat(),
+                 'project': str(project.resolve())}
+        # Retain the directory on interrupted/failed metadata writes (fail closed).
+        with owner_file.open('x') as handle:
+            json.dump(owner, handle, indent=2)
+            handle.write('\n')
+            handle.flush()
+            os.fsync(handle.fileno())
+        print(json.dumps(owner, indent=2))
+        return
+    if not lock.exists():
+        print('UNLOCKED')
+        return
+    try:
+        owner = json.loads(owner_file.read_text())
+        if not isinstance(owner, dict) or not owner.get('session_id') or not owner.get('host'):
+            raise ValueError('Incomplete metadata')
+    except (OSError, ValueError):
+        raise Error('Lock metadata unavailable/corrupt. Stop all writers and use the documented manual recovery; no lock removed.')
+    if action == 'status':
+        print(json.dumps(owner, indent=2))
+        return
+    if owner['host'] != socket.gethostname():
+        raise Error('Lock belongs to another computer: ' + str(owner['host']) + '. Release there after stopping its writer; no lock removed.')
+    if session:
+        if owner['session_id'] != session:
+            raise Error('Session mismatch; no lock removed.')
+    else:
+        print(json.dumps(owner, indent=2))
+        if not sys.stdin.isatty():
+            raise Error('Noninteractive release requires --session OWNER_SESSION_ID. Stop the owning writer first.')
+        answer = input('Stop the owning agent and its modifying tasks first. Type release to unlock: ')
+        if answer.strip() != 'release':
+            raise Error('Release cancelled; lock retained.')
+    # Confirm metadata still matches what was displayed/approved.
+    try:
+        current = json.loads(owner_file.read_text())
+    except (OSError, ValueError):
+        raise Error('Ownership metadata changed during release; no lock removed.')
+    if current != owner:
+        raise Error('Ownership changed during release; no lock removed.')
+    owner_file.unlink()
+    lock.rmdir()
+    print('RELEASED')
+
+
 def update_main(root=None):
     p = argparse.ArgumentParser(description='Update version, release, and synchronize Git, in that order (pull runs first).')
     p.add_argument('--version', nargs='?', const='minor')
     p.add_argument('--release', action='store_true')
+    p.add_argument('--lock', choices=['acquire', 'aquire', 'release', 'status'], help='Manage project ownership; aquire is an alias for acquire')
+    p.add_argument('--agent', default='manual', help='Owner label for --lock acquire')
+    p.add_argument('--agent-version', default='unknown', help='Owner application version for --lock acquire')
     p.add_argument('--session', help='Owner session ID required when an agent lock is active')
     p.add_argument('--git-push', nargs='?', const='')
     p.add_argument('--git-pull', nargs='?', const='')
@@ -348,6 +413,11 @@ def update_main(root=None):
     args = p.parse_args()
     def work():
         project = root or Path(git(Path.cwd(), 'rev-parse', '--show-toplevel'))
+        if args.lock:
+            if args.version is not None or args.release or args.git_push is not None or args.git_pull is not None:
+                raise Error('--lock must run separately from version, release or Git operations.')
+            manage_lock(project, args.lock, args.session, args.agent, args.agent_version)
+            return
         if args.git_pull == 'show' or args.git_push == 'show':
             if args.version is not None or args.release or (args.git_pull not in (None, 'show')) or (args.git_push not in (None, 'show')):
                 raise Error('show cannot be combined with modifying operations.')

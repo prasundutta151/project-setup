@@ -102,6 +102,49 @@ class Integration(unittest.TestCase):
         self.update('--version','--session',session)
         self.call(sys.executable, str(self.root/'script/agent_lock.py'), 'release', '--session', session)
 
+    def test_manual_lock_commands(self):
+        import json
+        self.assertEqual(self.update('--lock','status').stdout.strip(), 'UNLOCKED')
+        acquired = self.update('--lock','aquire','--agent','test-agent','--agent-version','2')
+        owner = json.loads(acquired.stdout)
+        token = owner['session_id']
+        self.assertEqual(owner['agent_version'], '2')
+        self.update('--lock','acquire',ok=False)
+        self.update('--lock','release','--session','wrong',ok=False)
+        self.update('--lock','release',ok=False)  # Noninteractive needs attribution.
+        self.update('--lock','release','--session',token,'--version',ok=False)
+        # Interoperates with agent helper and updater mutation guard.
+        self.call(sys.executable,str(self.root/'script/agent_lock.py'),'check','--session',token)
+        self.update('--version','--session',token)
+        self.update('--lock','release','--session',token)
+        self.assertEqual(self.update('--lock','release').stdout.strip(), 'UNLOCKED')
+
+    def test_manual_lock_foreign_corrupt_and_helper_acquisition(self):
+        import json
+        owner = json.loads(self.call(sys.executable,str(self.root/'script/agent_lock.py'),'acquire','--agent','test').stdout)
+        token = owner['session_id']
+        self.update('--lock','release','--session',token)
+        self.update('--lock','acquire')
+        path = self.root/'.agent-state/lock/owner.json'
+        owner = json.loads(path.read_text()); owner['host'] = 'foreign-computer'
+        path.write_text(json.dumps(owner))
+        self.update('--lock','release','--session',owner['session_id'],ok=False)
+        self.assertTrue(path.exists())
+        path.write_text('broken')
+        self.update('--lock','release',ok=False)
+        self.assertTrue(path.exists())
+
+    def test_interactive_manual_release(self):
+        self.update('--lock','acquire')
+        lock = self.root/'.agent-state/lock'
+        with patch('sys.stdin.isatty',return_value=True), patch('builtins.input',return_value='no'), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(cli.Error):
+                cli.manage_lock(self.root,'release',None,'manual','unknown')
+        self.assertTrue(lock.exists())
+        with patch('sys.stdin.isatty',return_value=True), patch('builtins.input',return_value='release'), contextlib.redirect_stdout(io.StringIO()):
+            cli.manage_lock(self.root,'release',None,'manual','unknown')
+        self.assertFalse(lock.exists())
+
     def test_first_push_on_unborn_branch(self):
         self.remote()
         # Remove the sole test commit's branch ref to recreate an unborn branch.

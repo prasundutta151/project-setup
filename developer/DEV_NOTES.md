@@ -19,6 +19,25 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-20 16:15:26 UTC
+
+Prompt / Request
+- Add project-update --lock acquire/release (accept aquire), push to Git and install the new version on this computer.
+
+Changes Made
+- Added shared-format acquire/status/release operations and owner labels.
+- Interactive manual release displays owner and requires explicit release input; noninteractive release requires matching session and host.
+- Refuse competing acquire, mixed lock/mutation operations, wrong owner and corrupt metadata.
+- Version 1.0.1; regenerated installed/bundled/Model_Project updater copies and documented CLI.
+
+Verification
+- PASS: 31 local tests including interactive release/cancellation, helper interoperability, competing acquisition, corrupt/foreign owners and mixed-operation refusal.
+- PASS: installed 1.0.1 command exercised in a disposable Git repository (aquire, status, release).
+
+Notes
+- Existing boolean .agent_lock is not migrated; new commands use .agent-state/lock.
+- No force release or distributed-lock claim.
+
 ## 2026-09-20 11:51:46 UTC
 
 Prompt / Request
