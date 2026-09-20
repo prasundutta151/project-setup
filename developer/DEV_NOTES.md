@@ -19,6 +19,26 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-20 11:51:46 UTC
+
+Prompt / Request
+- Download the current project-setup from GitHub, install it and report whether it works.
+
+Changes Made
+- Fresh-cloned public main at d480301bb6904e3cdc01104f4f8058c732e65956.
+- Installed from the downloaded source into an isolated prefix and then the user's normal local prefix.
+- No application code changed during this verification.
+
+Verification
+- PASS: no-argument guide, new project creation, initial clean Git checkpoint, actual project name in notes and fresh handoff ID.
+- PASS: all 3 context integration tests shipped with the generated project.
+- PASS: standalone project-update performed major version bump and release creation after removing the isolated installation.
+- PASS: remote CI run 35508937027, Ubuntu/macOS with Python 3.9 and 3.13 (28 project tests + 3 context tests per matrix job).
+
+Notes
+- Tested software version 1.0.0. Tests used disposable projects and isolated Git identity.
+- Scientific commands and the external project-document tool are not bundled.
+
 ## 2026-09-20 11:47:14 UTC
 
 Prompt / Request
