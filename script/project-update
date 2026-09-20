@@ -277,8 +277,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.1; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.1'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.2; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.2'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -304,7 +304,7 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.0.1 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.0.2 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -400,8 +400,24 @@ def manage_lock(project: Path, action: str, session: str | None,
     print('RELEASED')
 
 
+def update_summary(action: str, result: str) -> None:
+    """Two terminal lines; keep structured stdout usable by scripts."""
+    sys.stdout.flush()
+    print('Action: ' + ' '.join(action.split()), file=sys.stderr)
+    print('Result: ' + ' '.join(result.split()), file=sys.stderr)
+
+
+class UpdateParser(argparse.ArgumentParser):
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, sys.stderr)
+        update_summary('Show project-update help' if status == 0 else 'Validate project-update arguments',
+                       'Help displayed; no operations run.' if status == 0 else 'FAILED: invalid arguments; no operations run.')
+        raise SystemExit(status)
+
+
 def update_main(root=None):
-    p = argparse.ArgumentParser(description='Update version, release, and synchronize Git, in that order (pull runs first).')
+    p = UpdateParser(description='Update version, release, and synchronize Git, in that order (pull runs first).')
     p.add_argument('--version', nargs='?', const='minor')
     p.add_argument('--release', action='store_true')
     p.add_argument('--lock', choices=['acquire', 'aquire', 'release', 'status'], help='Manage project ownership; aquire is an alias for acquire')
@@ -412,25 +428,43 @@ def update_main(root=None):
     p.add_argument('--git-pull', nargs='?', const='')
     p.add_argument('--massage', '--message', dest='message', nargs='?', const=None)
     args = p.parse_args()
+    requested = []
+    if args.lock: requested.append('lock ' + ('acquire' if args.lock == 'aquire' else args.lock))
+    if args.git_pull is not None: requested.append('Git pull ' + (args.git_pull or 'current branch'))
+    if args.version is not None: requested.append('version ' + args.version)
+    if args.release: requested.append('create release archive')
+    if args.git_push is not None: requested.append('Git push ' + (args.git_push or 'current branch'))
+    action = '; '.join(requested) or 'Show project-update help'
+    completed = []
     def work():
+        if not requested:
+            p.print_help()
+            completed.append('Help displayed; no operations run')
+            return
         project = root or Path(git(Path.cwd(), 'rev-parse', '--show-toplevel'))
         if args.lock:
             if args.version is not None or args.release or args.git_push is not None or args.git_pull is not None:
                 raise Error('--lock must run separately from version, release or Git operations.')
+            existed = (project / '.agent-state/lock').exists()
             manage_lock(project, args.lock, args.session, args.agent, args.agent_version)
+            if args.lock in ('acquire', 'aquire'):
+                completed.append('Lock acquired; ownership details and session ID printed above')
+            elif args.lock == 'release':
+                completed.append('Lock released' if existed else 'Already unlocked; nothing changed')
+            else:
+                completed.append('Project is locked; owner details printed above' if existed else 'Project is unlocked')
             return
         if args.git_pull == 'show' or args.git_push == 'show':
             if args.version is not None or args.release or (args.git_pull not in (None, 'show')) or (args.git_push not in (None, 'show')):
                 raise Error('show cannot be combined with modifying operations.')
             print(git(project, 'branch', '--all'))
-            return
-        if args.git_pull is None and args.git_push is None and args.version is None and not args.release:
-            p.print_help()
+            completed.append('Listed known branches; no files or remote refs changed')
             return
         lock = project / '.agent-state/lock'
         if lock.exists():
             try:
                 owner = json.loads((lock / 'owner.json').read_text())
+                if not isinstance(owner, dict): raise ValueError('Invalid metadata')
             except (OSError, ValueError):
                 raise Error('Lock metadata unavailable; recover ownership before updating.')
             if owner.get('session_id') != args.session or owner.get('host') != socket.gethostname():
@@ -438,16 +472,29 @@ def update_main(root=None):
         message = args.message if args.message is not None else datetime.now().strftime('%d:%m:%y|%H-%M-%S')
         if args.git_pull is not None:
             transfer(project, 'pull', args.git_pull, message)
+            completed.append('Fetched tag ' + args.git_pull if VERSION_RE.fullmatch(args.git_pull or '') else 'Fast-forward pull completed for ' + (args.git_pull or current_branch(project)))
         version = validate(version_path(project).read_text().splitlines()[0])
         if args.version is not None:
+            before = version
             version = next_version(version, args.version)
             write_version(project, version)
             print(f'Version: {version}')
+            completed.append('Version unchanged at ' + version if before == version else 'Version ' + before + ' -> ' + version)
         if args.release:
             release(project, version, message)
+            destination = project/'version/dist' if (project/'version/VERSION').is_file() else project/'versions'
+            completed.append('Archive created: ' + str(destination/(project.name+'-'+version+'.tar.gz')))
         if args.git_push is not None:
             transfer(project, 'push', args.git_push, message)
-    run(work)
+            completed.append('Pushed tag v' + args.git_push if VERSION_RE.fullmatch(args.git_push or '') else 'Pushed branch ' + (args.git_push or current_branch(project)) + ' to origin')
+    try:
+        work()
+    except (Error, OSError, ValueError, IndexError, EOFError, subprocess.CalledProcessError) as exc:
+        progress = '; '.join(completed) if completed else 'No operation confirmed complete'
+        update_summary(action, 'FAILED: ' + str(exc) + ' Completed: ' + progress + '. Earlier local changes may remain; inspect state before retrying.')
+        raise SystemExit(1)
+    update_summary(action, '; '.join(completed) + '.')
+
 
 def run(action):
     try:

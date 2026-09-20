@@ -60,7 +60,11 @@ class Integration(unittest.TestCase):
         else: self.assertNotEqual(result.returncode, 0)
         return result
     def update(self, *args, ok=True):
-        return self.call(str(self.root/'script/project-update'), *args, cwd=self.base, ok=ok)
+        result = self.call(str(self.root/'script/project-update'), *args, cwd=self.base, ok=ok)
+        lines = result.stderr.splitlines()
+        self.assertTrue(lines[-2].startswith('Action: '), result.stderr)
+        self.assertTrue(lines[-1].startswith('Result: '), result.stderr)
+        return result
     def git(self, *args): return self.call('git','-C',str(self.root),*args).stdout.strip()
     def remote(self):
         remote = self.base/'remote.git'
@@ -144,6 +148,27 @@ class Integration(unittest.TestCase):
         with patch('sys.stdin.isatty',return_value=True), patch('builtins.input',return_value='release'), contextlib.redirect_stdout(io.StringIO()):
             cli.manage_lock(self.root,'release',None,'manual','unknown')
         self.assertFalse(lock.exists())
+
+    def test_two_line_summaries(self):
+        cases = [([], 'Help displayed'), (['--help'], 'Help displayed'),
+                 (['--version','0.1.0'], 'unchanged'), (['--version'], '0.1.0 -> 0.1.1'),
+                 (['--release'], 'Archive created'), (['--git-push','show'], 'Listed known branches'),
+                 (['--lock','status'], 'unlocked')]
+        for args, expected in cases:
+            result = self.update(*args)
+            lines = result.stderr.splitlines()
+            self.assertEqual(len(lines),2,result.stderr)
+            self.assertTrue(lines[0].startswith('Action: '))
+            self.assertTrue(lines[1].startswith('Result: '))
+            self.assertIn(expected,lines[1])
+        result = self.update('--version','major','--git-push',ok=False)
+        self.assertEqual(len(result.stderr.splitlines()),2)
+        self.assertIn('FAILED:',result.stderr)
+        self.assertIn('Version 0.1.1 -> 1.0.0',result.stderr)
+        self.assertEqual((self.root/'version/VERSION').read_text().splitlines()[0], '1.0.0')
+        result = self.update('--lock','invalid',ok=False)
+        self.assertTrue(result.stderr.splitlines()[-2].startswith('Action: '))
+        self.assertIn('invalid arguments',result.stderr.splitlines()[-1])
 
     def test_first_push_on_unborn_branch(self):
         self.remote()

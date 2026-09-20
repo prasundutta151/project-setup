@@ -19,6 +19,23 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-20 16:21:10 UTC
+
+Prompt / Request
+- Give every project-update option a two-line action/result summary, push to Git and reinstall.
+
+Changes Made
+- Added final Action/Result summaries for help, lock, versions, releases, Git operations, combined operations and errors.
+- Kept structured stdout intact; summary lines use stderr. Report completed steps on partial failure without claiming rollback.
+- Version 1.0.2, regenerated standalone/template updaters and documented summaries.
+
+Verification
+- PASS: 32 tests, with final summary assertions across updater operations and dedicated no-op, invalid-argument and partial-failure coverage.
+- PASS: installed CLI help/status/release summaries in a disposable repository.
+
+Notes
+- No scientific operations or unrelated project files changed.
+
 ## 2026-09-20 16:15:26 UTC
 
 Prompt / Request

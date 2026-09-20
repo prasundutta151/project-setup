@@ -26,3 +26,11 @@ type release. Agents/scripts must supply --session OWNER_SESSION_ID; wrong
 sessions, foreign computers and corrupt metadata are refused. An already unlocked
 project reports UNLOCKED. No automatic timeout or force release is introduced.
 The old boolean .agent_lock file is not managed by these commands.
+
+## Operation summaries
+Every project-update invocation ends with two summary lines: Action and Result.
+This covers versions (including unchanged versions), archives, Git push/pull and
+branch listings, locks, help and failures. Combined operations share one final
+summary. Failures name completed steps and retain a nonzero exit status; changes
+made before a failure are not rolled back. Summaries go to stderr so existing
+structured stdout (such as lock ownership JSON) remains machine-readable.
