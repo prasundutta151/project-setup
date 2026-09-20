@@ -35,4 +35,3 @@ Notes
 - Decisions, assumptions, follow-up work and handoff context.
 - Commit containing this entry: find via Git history; do not invent a hash.
 ```
-
