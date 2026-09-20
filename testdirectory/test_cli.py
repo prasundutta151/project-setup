@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -85,7 +86,9 @@ class Integration(unittest.TestCase):
         self.assertEqual((self.root/'version/VERSION').read_text().splitlines()[0], '1.0.0')
 
     def test_legacy_version_layout(self):
-        (self.root/'version/VERSION').rename(self.root/'VERSION')
+        history = (self.root/'version/VERSION').read_text()
+        shutil.rmtree(self.root/'version')  # VERSION and version collide on macOS.
+        (self.root/'VERSION').write_text(history)
         (self.root/'release-files.txt').write_text('VERSION\nscript\n')
         self.update('--version','--release')
         self.assertEqual((self.root/'VERSION').read_text().splitlines()[0], '0.1.1')

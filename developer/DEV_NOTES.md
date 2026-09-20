@@ -34,7 +34,7 @@ Verification
 - 28 project/Git/updater tests and 3 context integration tests passed locally.
 - Extracted archive installed to an isolated prefix with spaces; scaffold and standalone updater verified after deleting installed package.
 - Built and installed wheel in isolation; template assets and generated updater verified.
-- Linux tested locally; macOS/Python matrix checked through remote CI at publication.
+- Linux tested locally; macOS CI caught a legacy-layout fixture collision between VERSION and version/. Fixed the fixture to remove the modern directory before creating the legacy file; remote matrix rerun before publication.
 
 Notes
 - Existing public repository retained. No unrelated existing project migrated.
