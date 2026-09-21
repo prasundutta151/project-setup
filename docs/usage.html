@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-112-step-by-step-guide">project-setup 1.1.2 — step-by-step guide</h1>
+<h2 id="1-install-and-discover-commands">1. Install and discover commands</h2>
+<p>Download the release archive, extract it, and run <code>python3 install.py</code>.
+Add <code>~/.local/bin</code> to PATH if necessary. Requires Python 3.9+ and Git 2.28+.</p>
+<pre><code class="language-sh">project-setup
+project-setup --help
+project-setup --git-setup guide
+project-update --help
+</code></pre>
+<h2 id="2-create-a-project-or-clone-existing-work">2. Create a project or clone existing work</h2>
+<pre><code class="language-sh">project-setup --project MyProject --proj-dir ~/Projects --proj-description &quot;Analyze stellar spectra&quot;
+project-setup --project MyProject --proj-dir ~/Projects --proj-description /path/description.txt
+project-setup --from-git OWNER/REPOSITORY --proj-dir ~/Projects
+</code></pre>
+<p>Use one creation command, not all three against the same destination. Bare
+repository names use the account authenticated in GitHub CLI. Cloning preserves
+existing files/history and does not install dependencies or overlay agent files.
+Text files may contain ASCII or UTF-8. The description populates
+PROJECT_DESCRIPTION.txt and initial project context. Conflicting existing cloned
+descriptions are preserved. See README for --remote and destination overrides.</p>
+<h2 id="3-start-an-agent">3. Start an agent</h2>
+<p>For a newly scaffolded project, ask the agent to read its startup-prompt.txt.
+It must follow AGENTS.md, inspect context and update developer/DEV_NOTES.md.
+A cloned project may have different rules; inspect its README and instructions.</p>
+<h2 id="4-control-ownership">4. Control ownership</h2>
+<pre><code class="language-sh">cd ~/Projects/MyProject
+project-update --lock acquire
+project-update --lock status
+project-update --lock release
+</code></pre>
+<p><code>aquire</code> is accepted as an alias. Acquisition prints a new session ID. Interactive
+release displays the owner and asks for confirmation after you stop the writer.
+Scripts/agents pass <code>--session OWNER_SESSION_ID</code>. Other hosts or mismatched IDs
+cannot release ownership. These are cooperative local locks, not distributed
+locks or evidence that iCloud sync is complete.</p>
+<h2 id="5-request-documentation">5. Request documentation</h2>
+<p>Ask the agent to read documentation-prompt.txt and follow the documentation rules.
+The description and actual implemented commands inform the manuals. Full HTML/TXT
+manuals are generated only when requested. External project-document is not bundled;
+its installed interface must be checked before invocation. This software's own
+README-based offline guide is built by developer/script/build_docs.py.</p>
+<h2 id="6-version-release-and-synchronize">6. Version, release and synchronize</h2>
+<pre><code class="language-sh">project-update --version
+project-update --release
+project-update --git-push --message &quot;Describe the changes&quot;
+project-update --git-pull
+</code></pre>
+<p>Supply --session SESSION_ID if an agent owns the lock. Review changes before push:
+push mode commits all nonignored changes. To stage only selected files, use ordinary
+Git instead. Pull requires a clean tree and fast-forwards only. Git-only operations
+work without VERSION; version/release operations require version/VERSION or legacy
+root VERSION. Keep one authoritative version file. Default --version increments
+the patch; legacy middle increments the feature component and major the first.</p>
+<p>Each updater invocation ends with Action and Result lines on stderr; stdout
+remains available for structured data. Failures report completed steps without
+claiming rollback. Do not repeat successful version bumps when retrying a push.</p>
+<h2 id="7-move-to-another-computer">7. Move to another computer</h2>
+<p>Finish notes, stamp HANDOFF, commit/push and release ownership. On the next machine,
+clone once or pull, install its dependencies, then begin a fresh agent session.
+Prefer separate ~/Projects clones outside iCloud. Refer to docs/CONTEXT_WORKFLOW.md
+in a generated project for fingerprint checks and session cache details.</p></body></html>

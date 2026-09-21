@@ -19,6 +19,22 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-21 02:37:35 UTC
+
+Prompt / Request
+- Create a new version, update documentation and push to Git.
+
+Changes Made
+- Version 1.1.2 documentation release; refreshed numbered usage guide covering creation, cloning, descriptions, Git guide, lock controls, summaries and agent handoffs.
+- Updated version metadata, offline HTML guide and standalone updater copies.
+
+Verification
+- PASS: 38 local tests; guide anchors and HTML/TXT source consistency checked.
+- Rebuilt the offline main guide and linked step-by-step HTML/TXT guide.
+
+Notes
+- Used the repository's existing README-based documentation builder; external project-document is not installed.
+
 ## 2026-09-21 02:22:06 UTC
 
 Prompt / Request
