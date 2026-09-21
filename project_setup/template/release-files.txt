@@ -1,6 +1,7 @@
 version/VERSION
 version/CHANGELOG.txt
 README.md
+PROJECT_DESCRIPTION.txt
 script
 docs
 json

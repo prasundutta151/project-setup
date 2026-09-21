@@ -244,6 +244,65 @@ def write_updater(root):
     updater.chmod(0o755)
 
 
+def read_description(value: str | None) -> str | None:
+    if value is None:
+        return None
+    candidate = Path(value[1:] if value.startswith('@') else value).expanduser()
+    explicit_file = value.startswith('@') or ('\n' not in value and value.lower().endswith('.txt'))
+    try:
+        try:
+            is_file = candidate.is_file() if len(value) < 4096 and '\n' not in value else False
+        except OSError:
+            if explicit_file: raise
+            is_file = False
+        if explicit_file or is_file:
+            if not is_file:
+                raise Error('Description file not found: ' + str(candidate))
+            value = candidate.read_text(encoding='utf-8')
+    except (OSError, UnicodeError) as exc:
+        raise Error('Cannot read description text file: ' + str(exc))
+    if not value.strip() or '\x00' in value:
+        raise Error('Project description must be nonempty plain text without NUL bytes.')
+    return value.strip()
+
+
+def clone_project(args):
+    name = args.from_git
+    # An explicit remote permits any Git host/local URL while retaining a simple name.
+    if args.remote:
+        project = args.project or name.rsplit('/', 1)[-1]
+        remote = args.remote
+    else:
+        if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*(?:/[A-Za-z0-9][A-Za-z0-9_.-]*)?', name):
+            raise Error('--from-git expects NAME or OWNER/REPO; use --remote URL for other hosts.')
+        repo = name if '/' in name else github(Path.cwd(), 'api', 'user', '--jq', '.login') + '/' + name
+        project = args.project or repo.rsplit('/', 1)[-1]
+        remote = 'https://github.com/' + repo + '.git'
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', project):
+        raise Error('Project destination must be a single directory name.')
+    parent = Path(args.proj_dir).expanduser().resolve()
+    parent.mkdir(parents=True, exist_ok=True)
+    if git(parent, 'rev-parse', '--show-toplevel', check=False):
+        raise Error('Choose a clone destination outside an existing Git repository.')
+    root = parent / project
+    if root.exists() or root.is_symlink():
+        raise Error('Destination already exists; use its existing checkout or a new name.')
+    git(parent, 'clone', '--', remote, str(root))
+    if args.description is not None:
+        target = root / 'PROJECT_DESCRIPTION.txt'
+        if target.is_symlink() or (target.exists() and (not target.is_file() or target.read_text(encoding='utf-8').strip() != args.description)):
+            raise Error('Clone retained at ' + str(root) + '; existing PROJECT_DESCRIPTION.txt differs. It was not overwritten.')
+        if not target.exists():
+            target.write_text(args.description + '\n', encoding='utf-8')
+            print('Added PROJECT_DESCRIPTION.txt as an uncommitted local change; review and commit when ready.')
+    print(f'Cloned: {root}\nOrigin: {remote}')
+    print('Existing source, history and project rules preserved. No scaffold overlay, dependencies installed, or project code executed.')
+    if (root/'startup-prompt.txt').is_file():
+        print(f'Next: ask your agent to read {root / "startup-prompt.txt"}.')
+    else:
+        print('Next: ask your agent to inspect README and any AGENTS.md; use installed project-update in this checkout for Git synchronization.')
+
+
 def scaffold(args):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project):
         raise Error('PROJECT must be a single directory name starting with a letter or digit.')
@@ -263,7 +322,8 @@ def scaffold(args):
             (root / directory).mkdir(exist_ok=True)
             if not any((root / directory).iterdir()):
                 (root / directory / '.gitkeep').touch()
-        objective = args.objective or 'Define the astronomy objective with the user.'
+        objective = args.description or 'Define the astronomy objective with the user.'
+        (root/'PROJECT_DESCRIPTION.txt').write_text(objective + '\n', encoding='utf-8')
         for name in ('README.md', 'HANDOFF.md', 'developer/DEV_NOTES.md'):
             f = root / name
             f.write_text(f.read_text().replace('__PROJECT__', args.project).replace('__OBJECTIVE__', objective))
@@ -272,13 +332,13 @@ def scaffold(args):
         # Compatibility pointer; there is only one authoritative rule set.
         (root / 'developer/AGENT_RULES.md').write_text('Read and follow ../AGENTS.md at the project root. Do not use the old boolean .agent_lock protocol.\n')
         (root / 'startup-prompt.txt').write_text('Continue this project from the directory containing this file. Read AGENTS.md and docs/CONTEXT_WORKFLOW.md. Acquire a fresh session lock, check context and read HANDOFF.md and recent developer/DEV_NOTES.md as required. Follow docs/DOCUMENTATION_RULES.md; generate manuals only on request. Ask for missing science requirements and perform the user-requested task. Do not recreate this project or copy Model_Project again.\n')
-        (root / 'release-files.txt').write_text('version/VERSION\nversion/CHANGELOG.txt\nREADME.md\nscript\ndocs\njson\npipeline\nplot\nrelease-files.txt\n')
+        (root / 'release-files.txt').write_text('version/VERSION\nversion/CHANGELOG.txt\nREADME.md\nPROJECT_DESCRIPTION.txt\nscript\ndocs\njson\npipeline\nplot\nrelease-files.txt\n')
         write_updater(root)
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.0.2; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.0.2'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.1.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.1.0'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -304,10 +364,12 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.0.2 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.1.0 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
+   Or clone existing work: project-setup --from-git OWNER/REPO --proj-dir ~/Projects
+   Description: --proj-description "Text" or --proj-description /path/description.txt
 3. Ask any coding agent: Read /absolute/project/path/startup-prompt.txt and follow it.
 4. The agent reads rules, acquires ownership, checks context and records development notes.
 5. At handoff: finish notes, stamp handoff, commit, synchronize, then release ownership.
@@ -324,7 +386,9 @@ def setup_main():
         main(sys.argv[2:])
         return
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
-    p.add_argument('--project')
+    p.add_argument('--project', help='New project name, or optional clone destination name')
+    p.add_argument('--from-git', metavar='PROJECT', help='Clone NAME or OWNER/REPO without overlaying the template')
+    p.add_argument('--proj-description', help='Description text or UTF-8/ASCII text-file path; @PATH explicitly selects a file')
     p.add_argument('--guide', action='store_true', help='Show numbered agent project setup instructions')
     p.add_argument('--objective', help='Scientific objective recorded in the new project')
     p.add_argument('--proj-dir', default='.')
@@ -335,9 +399,19 @@ def setup_main():
     if args.guide or len(sys.argv) == 1:
         startup_guide()
         return
-    if not args.project:
-        p.error('--project is required to create a project; run without arguments for the guide')
-    run(lambda: scaffold(args))
+    if args.proj_description is not None and args.objective is not None:
+        p.error('Use --proj-description or its older --objective alternative, not both.')
+    if args.from_git and (args.create_remote or args.git_push):
+        p.error('--from-git cannot create remotes or push during cloning.')
+    if not args.project and not args.from_git:
+        p.error('--project or --from-git is required; run without arguments for the guide')
+    def create():
+        args.description = read_description(args.proj_description if args.proj_description is not None else args.objective)
+        if args.from_git:
+            clone_project(args)
+        else:
+            scaffold(args)
+    run(create)
 
 def manage_lock(project: Path, action: str, session: str | None,
                 agent: str, agent_version: str) -> None:
@@ -473,7 +547,7 @@ def update_main(root=None):
         if args.git_pull is not None:
             transfer(project, 'pull', args.git_pull, message)
             completed.append('Fetched tag ' + args.git_pull if VERSION_RE.fullmatch(args.git_pull or '') else 'Fast-forward pull completed for ' + (args.git_pull or current_branch(project)))
-        version = validate(version_path(project).read_text().splitlines()[0])
+        version = validate(version_path(project).read_text().splitlines()[0]) if args.version is not None or args.release else None
         if args.version is not None:
             before = version
             version = next_version(version, args.version)

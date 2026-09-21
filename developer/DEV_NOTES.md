@@ -19,6 +19,26 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-21 02:09:02 UTC
+
+Prompt / Request
+- Add --from-git PROJECT and --proj-description accepting quoted text or a text file; explain and retain built-in documentation instructions.
+
+Changes Made
+- Clone existing GitHub repositories by NAME/OWNER/REPO, or use explicit --remote; preserve history and refuse existing destinations.
+- Store descriptions in PROJECT_DESCRIPTION.txt and seed new project context; do not overwrite cloned descriptions.
+- Add portable documentation-prompt.txt and description-aware documentation rules.
+- Allow Git-only updater operations on repositories without version files.
+- Version 1.1.0; regenerated standalone updaters and installer documentation.
+
+Verification
+- PASS: 37 local tests including real local Git clones, preservation/conflict handling, literal/file/long descriptions and Git-only sync without VERSION.
+- PASS: installed bare-name GitHub clone and text-file description scaffold; documentation prompt present.
+
+Notes
+- Clone mode does not inject the template or install/run cloned project code.
+- Full manual generation remains on request; external project-document is not bundled.
+
 ## 2026-09-20 16:21:10 UTC
 
 Prompt / Request

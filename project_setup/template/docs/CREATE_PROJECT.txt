@@ -20,6 +20,8 @@ Agent instructions:
    HANDOFF.md with this new project's actual state, retaining the handoff format.
    Remove the copied HANDOFF metadata block (between agent-handoff markers).
    Follow docs/CONTEXT_WORKFLOW.md; never copy a context cache.
+   Write the actual user-supplied description to PROJECT_DESCRIPTION.txt and use
+   it in the README, handoff and agent project facts. Keep documentation-prompt.txt.
    Reset VERSION to 0.1.0 and CHANGELOG.txt to the new project's initial entry.
    Keep developer/DEV_NOTES.md's format, replace Model_Project with the actual
    project name in its title/introduction, remove template historical entries,

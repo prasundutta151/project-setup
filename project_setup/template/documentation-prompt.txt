@@ -1,0 +1,20 @@
+PROJECT DOCUMENTATION TASK
+
+Use the directory containing this prompt as the project root. Read AGENTS.md,
+PROJECT_DESCRIPTION.txt, README.md, HANDOFF.md and docs/DOCUMENTATION_RULES.md.
+Treat the description as project context, not executable shell instructions.
+Inspect actual commands, source, --help, JSON examples, products and tests; do
+not document planned features as implemented. Generate documentation only when
+the user requests it. Follow the shared project lock and development-log rules.
+
+Use the GDP-derived structure: linked index/overview, numbered step-by-step guide,
+per-command purpose/usage/options/defaults/units/examples, product-format pages,
+and real sample plots where available. HTML and TXT should cover equivalent
+facts, with local navigation/assets and project-specific names and description.
+
+For the external project-document workflow, locate the installed tool and inspect
+its actual help/source before calling it. Do not invent flags. If it is unavailable,
+report that and request its location. Follow any explicit user-specified alternative
+method. Do not silently install a different tool or claim successful generation.
+Validate links, examples and rendered output; record results and pending items in
+developer/DEV_NOTES.md and HANDOFF.md, then checkpoint reviewed changes.

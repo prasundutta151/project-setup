@@ -20,6 +20,13 @@ class Versions(unittest.TestCase):
         for value in ['../evil', '01.2.3', '1.100.0', '1.2', '-1.0.0', '1.2.3\n']:
             with self.assertRaises(cli.Error): cli.validate(value)
 
+class Descriptions(unittest.TestCase):
+    def test_long_literal_empty_and_explicit_missing(self):
+        long_text = 'Scientific description. ' * 100
+        self.assertEqual(cli.read_description(long_text),long_text.strip())
+        for value in ['', '   ', '@missing-description', 'missing-description.txt', 'bad\x00text']:
+            with self.assertRaises(cli.Error): cli.read_description(value)
+
 class RemoteCreation(unittest.TestCase):
     @patch.object(cli, 'git')
     @patch.object(cli, 'github')
@@ -39,6 +46,16 @@ class RemoteCreation(unittest.TestCase):
     def test_auth_failure_does_not_configure_remote(self, gh, git):
         with self.assertRaises(cli.Error): cli.ensure_remote(Path('/tmp/demo'), None)
         git.assert_not_called()
+    @patch.object(cli, 'git')
+    @patch.object(cli, 'github', return_value='test-owner')
+    def test_clone_short_name_resolution(self, gh, git):
+        import argparse
+        with tempfile.TemporaryDirectory() as tmp:
+            git.return_value = ''
+            args = argparse.Namespace(from_git='KnownProject', project=None, remote=None, proj_dir=tmp, description=None)
+            with contextlib.redirect_stdout(io.StringIO()): cli.clone_project(args)
+            self.assertIn(unittest.mock.call(Path(tmp).resolve(),'clone','--','https://github.com/test-owner/KnownProject.git',str(Path(tmp).resolve()/'KnownProject')),git.call_args_list)
+
     def test_guidance_uses_absolute_quoted_path(self):
         output = io.StringIO()
         with contextlib.redirect_stderr(output): cli.setup_guidance(Path('/tmp/my project'))
@@ -68,7 +85,7 @@ class Integration(unittest.TestCase):
     def git(self, *args): return self.call('git','-C',str(self.root),*args).stdout.strip()
     def remote(self):
         remote = self.base/'remote.git'
-        self.call('git','init','--bare',str(remote))
+        self.call('git','init','--bare','--initial-branch=main',str(remote))
         self.git('remote','add','origin',str(remote))
     def test_scaffold_and_refusal(self):
         for name in cli.DIRS: self.assertTrue((self.root/name).is_dir())
@@ -169,6 +186,43 @@ class Integration(unittest.TestCase):
         result = self.update('--lock','invalid',ok=False)
         self.assertTrue(result.stderr.splitlines()[-2].startswith('Action: '))
         self.assertIn('invalid arguments',result.stderr.splitlines()[-1])
+
+    def setup_cli(self, *args, ok=True):
+        return self.call(sys.executable,'-c','from project_setup.cli import setup_main; setup_main()',*args,ok=ok)
+
+    def test_description_text_and_file(self):
+        description = self.base/'description with spaces.txt'
+        description.write_text('Measure stars.\nReport calibrated fluxes.\n')
+        self.setup_cli('--project','Described','--proj-dir',str(self.base),'--proj-description',str(description))
+        project = self.base/'Described'
+        self.assertEqual((project/'PROJECT_DESCRIPTION.txt').read_text(),description.read_text())
+        self.assertIn('Measure stars.',(project/'README.md').read_text())
+        self.assertIn('Report calibrated fluxes.',(project/'HANDOFF.md').read_text())
+        self.setup_cli('--project','Inline','--proj-dir',str(self.base),'--proj-description','Analyze spectra')
+        self.assertEqual((self.base/'Inline/PROJECT_DESCRIPTION.txt').read_text(),'Analyze spectra\n')
+        self.setup_cli('--project','Missing','--proj-dir',str(self.base),'--proj-description',str(self.base/'missing.txt'),ok=False)
+        self.assertFalse((self.base/'Missing').exists())
+
+    def test_from_git_preserves_existing_project_and_git_only_update(self):
+        self.remote()
+        self.update('--git-push')
+        self.setup_cli('--from-git','Copy','--remote',str(self.base/'remote.git'),'--proj-dir',str(self.base))
+        # Bare test repository default branch is explicitly set below for portability.
+        copy = self.base/'Copy'
+        self.assertEqual(self.call('git','-C',str(copy),'rev-parse','HEAD').stdout.strip(),self.git('rev-parse','HEAD'))
+        self.assertEqual((copy/'README.md').read_text(),(self.root/'README.md').read_text())
+        self.assertEqual(self.call('git','-C',str(copy),'status','--porcelain').stdout.strip(),'')
+        self.setup_cli('--from-git','Copy','--remote',str(self.base/'remote.git'),'--proj-dir',str(self.base),ok=False)
+        # Git-only synchronization works even without a version file.
+        (copy/'version/VERSION').unlink()
+        self.call(str(copy/'script/project-update'),'--git-push','--message','Remove version',cwd=copy)
+        self.call(str(copy/'script/project-update'),'--git-pull',cwd=copy)
+        self.call(str(copy/'script/project-update'),'--version',cwd=copy,ok=False)
+
+    def test_clone_description_conflict_retains_remote_content(self):
+        self.remote(); self.update('--git-push')
+        self.setup_cli('--from-git','Conflict','--remote',str(self.base/'remote.git'),'--proj-dir',str(self.base),'--proj-description','Different description',ok=False)
+        self.assertEqual((self.base/'Conflict/PROJECT_DESCRIPTION.txt').read_text(),(self.root/'PROJECT_DESCRIPTION.txt').read_text())
 
     def test_first_push_on_unborn_branch(self):
         self.remote()

@@ -56,3 +56,8 @@ Check links, anchors, sample JSON and command names; render/visually inspect HTM
 and record actual checks and limitations. Update DEV_NOTES with the request,
 tool/version when known, files changed and validation. Commit reviewed output
 with the authorized local checkpoint. Do not publish automatically.
+
+## Description input
+Read PROJECT_DESCRIPTION.txt before generating manuals. Use its actual project
+purpose in the overview and workflow, checking claims against implemented code.
+Use documentation-prompt.txt as the portable task entry point.

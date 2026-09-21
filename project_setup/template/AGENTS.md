@@ -9,6 +9,9 @@ workflow. Keep docs/requirements.txt and docs/requirements.html synchronized
 with it when changing the contract. To create a project from this template, read
 docs/CREATE_PROJECT.txt. Local checkpoint commits are authorized by this contract.
 
+Read PROJECT_DESCRIPTION.txt for the current project purpose. On an explicit
+documentation request, follow documentation-prompt.txt and the documentation rules.
+
 ## Project facts
 - Purpose: Astronomy software; TODO — specify the scientific task.
 - Language/framework: TODO.
