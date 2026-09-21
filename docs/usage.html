@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-112-step-by-step-guide">project-setup 1.1.2 — step-by-step guide</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-120-step-by-step-guide">project-setup 1.2.0 — step-by-step guide</h1>
 <h2 id="1-install-and-discover-commands">1. Install and discover commands</h2>
 <p>Download the release archive, extract it, and run <code>python3 install.py</code>.
 Add <code>~/.local/bin</code> to PATH if necessary. Requires Python 3.9+ and Git 2.28+.</p>
@@ -58,4 +58,11 @@ claiming rollback. Do not repeat successful version bumps when retrying a push.<
 <p>Finish notes, stamp HANDOFF, commit/push and release ownership. On the next machine,
 clone once or pull, install its dependencies, then begin a fresh agent session.
 Prefer separate ~/Projects clones outside iCloud. Refer to docs/CONTEXT_WORKFLOW.md
-in a generated project for fingerprint checks and session cache details.</p></body></html>
+in a generated project for fingerprint checks and session cache details.</p>
+<h2 id="8-refresh-older-project-layouts">8. Refresh older project layouts</h2>
+<p>Run <code>project-setup --refresh NAME --proj-dir PARENT</code> and choose Antigravity,
+ChatGPT, Claude, OpenCode or Manual. Manual (the noninteractive default) prints
+a migration prompt for your agent. Automatic execution needs an explicitly
+configured agent command and clean Git baseline. See refresh.md/refresh.html.
+Review the resulting developer/REFRESH_REPORT.md and changes before committing.
+No license change or automatic migration of every repository is performed.</p></body></html>

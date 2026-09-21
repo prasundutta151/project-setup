@@ -1,4 +1,4 @@
-# project-setup 1.1.2 — step-by-step guide
+# project-setup 1.2.0 — step-by-step guide
 
 ## 1. Install and discover commands
 
@@ -82,3 +82,12 @@ Finish notes, stamp HANDOFF, commit/push and release ownership. On the next mach
 clone once or pull, install its dependencies, then begin a fresh agent session.
 Prefer separate ~/Projects clones outside iCloud. Refer to docs/CONTEXT_WORKFLOW.md
 in a generated project for fingerprint checks and session cache details.
+
+## 8. Refresh older project layouts
+
+Run `project-setup --refresh NAME --proj-dir PARENT` and choose Antigravity,
+ChatGPT, Claude, OpenCode or Manual. Manual (the noninteractive default) prints
+a migration prompt for your agent. Automatic execution needs an explicitly
+configured agent command and clean Git baseline. See refresh.md/refresh.html.
+Review the resulting developer/REFRESH_REPORT.md and changes before committing.
+No license change or automatic migration of every repository is performed.

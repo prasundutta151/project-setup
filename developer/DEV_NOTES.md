@@ -19,6 +19,27 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-21 03:01:26 UTC
+
+Prompt / Request
+- Add AI-assisted --refresh for existing projects, offering Antigravity, ChatGPT, Claude, OpenCode and Manual prompt output; bump version and upload to Git.
+- Explain a citation/permission-based licensing policy for use, modified releases and unchanged integration.
+
+Changes Made
+- Added refresh module, explicit agent selection/menu and configurable command invocation without shell evaluation.
+- Manual/unconfigured modes print a full migration prompt and preserve target files.
+- Automatic mode requires a clean baseline and ownership; checks required output paths, unchanged HEAD/remotes and leaves reviewable changes.
+- Added refresh documentation and non-binding licensing design notes; no LICENSE or existing project rights changed.
+- Version 1.2.0 and standalone updater refresh.
+
+Verification
+- PASS: 44 project tests plus 3 context tests; installed manual refresh preserved the target and printed the full prompt.
+- Refresh adapter integration uses a simulated agent, not a live AI model.
+
+Notes
+- No real user project was migrated. No external AI command was configured or invoked on user projects.
+- Documentation outlines licensing questions requiring rights-holder decisions/legal review; refresh preserves licenses.
+
 ## 2026-09-21 02:37:35 UTC
 
 Prompt / Request

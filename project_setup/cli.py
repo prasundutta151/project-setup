@@ -336,8 +336,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.1.2; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.1.2'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.2.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.2.0'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -363,7 +363,7 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.1.2 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.2.0 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -383,6 +383,9 @@ def setup_main():
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
     p.add_argument('--git-setup', nargs=argparse.REMAINDER, metavar='COMMAND',
                    help='Git helpers: guide, configure, new, clone, update. Example: project-setup --git-setup guide; put helper arguments after this option.')
+    p.add_argument('--refresh', metavar='PROJECT', help='Prepare an AI migration of an existing project to this template')
+    p.add_argument('--ai', choices=['antigravity', 'chatgpt', 'claude', 'opencode', 'manual'], help='Refresh agent; interactive menu if omitted, manual for noninteractive use')
+    p.add_argument('--ai-command', help='Refresh agent command containing {prompt_file}; optional {project_dir}, no shell. Default: PROJECT_SETUP_AI_COMMAND')
     p.add_argument('--project', help='New project name, or optional clone destination name')
     p.add_argument('--from-git', metavar='PROJECT', help='Clone NAME or OWNER/REPO without overlaying the template')
     p.add_argument('--proj-description', help='Description text or UTF-8/ASCII text-file path; @PATH explicitly selects a file')
@@ -402,13 +405,22 @@ def setup_main():
         return
     if args.proj_description is not None and args.objective is not None:
         p.error('Use --proj-description or its older --objective alternative, not both.')
+    if args.refresh and (args.project or args.from_git or args.remote or args.create_remote or args.git_push):
+        p.error('--refresh is an existing-project mode; do not combine it with creation/cloning/remote options.')
+    if (args.ai_command or args.ai) and not args.refresh:
+        p.error('--ai/--ai-command require --refresh.')
+    if args.ai_command and (args.ai is None or args.ai == 'manual'):
+        p.error('--ai-command requires an explicit non-manual --ai selection.')
     if args.from_git and (args.create_remote or args.git_push):
         p.error('--from-git cannot create remotes or push during cloning.')
-    if not args.project and not args.from_git:
+    if not args.project and not args.from_git and not args.refresh:
         p.error('--project or --from-git is required; run without arguments for the guide')
     def create():
         args.description = read_description(args.proj_description if args.proj_description is not None else args.objective)
-        if args.from_git:
+        if args.refresh:
+            from .refresh import refresh_project
+            refresh_project(args)
+        elif args.from_git:
             clone_project(args)
         else:
             scaffold(args)

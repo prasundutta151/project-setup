@@ -1,4 +1,4 @@
-# project-setup 1.1.2
+# project-setup 1.2.0
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
 `project-setup` without arguments for step-by-step instructions. The software
@@ -13,7 +13,7 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.1.2
+git checkout v1.2.0
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
@@ -289,3 +289,23 @@ The prompt defines what to document and the GDP-style structure. It does not
 bundle a document generator; project-document remains external and its real
 interface must be inspected before use. Manuals are not automatically regenerated
 for every code change.
+
+## Refresh an existing project with AI
+
+```sh
+project-setup --refresh MyProject --proj-dir ~/Projects
+project-setup --refresh MyProject --proj-dir ~/Projects --ai manual
+```
+
+Interactive use offers Antigravity, ChatGPT, Claude, OpenCode or Manual. Manual
+prints a complete migration prompt and changes no project files. Named choices
+also print the prompt when no command is configured. Use --ai-command containing
+{prompt_file}, or PROJECT_SETUP_AI_COMMAND_<AGENT>, for your actual installed
+agent CLI. No app-specific invocation or model credentials are guessed.
+See [refresh instructions](docs/refresh.md) for execution and ownership rules.
+Automatic runs require a clean committed repository, preserve history/remotes,
+leave changes uncommitted for review, and check required outputs before reporting
+completion of the AI run. Exit zero is not proof of scientific correctness.
+
+Refreshing never changes project licensing. See [licensing design notes](docs/LICENSING_OPTIONS.md)
+for the requested citation/permission policy discussion; these are not license terms.
