@@ -1,4 +1,4 @@
-# project-setup 1.2.0 — step-by-step guide
+# project-setup 1.3.0 — step-by-step guide
 
 ## 1. Install and discover commands
 

@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>project-setup — User Guide</title><style>
 :root{color-scheme:light;--ink:#182b3a;--accent:#075e69}*{box-sizing:border-box}body{margin:0;background:#f2f5f7;color:var(--ink);font:17px/1.65 system-ui,sans-serif}header{background:#123640;color:white;padding:42px max(24px,calc((100% - 960px)/2))}header p{margin:0;opacity:.85}.badge{font-size:13px;text-transform:uppercase;letter-spacing:2px}main{max-width:1000px;margin:0 auto;padding:32px 32px 80px;background:white}h1{font-size:2.5rem;line-height:1.15}h2{margin-top:2.3em;border-bottom:1px solid #dbe3e6;padding-bottom:.4em}h3{margin-top:2em}a{color:var(--accent)}pre{background:#102d38;color:#e8f2f5;padding:20px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.6}code{font-family:ui-monospace,monospace;font-size:.88em}p code,li code,td code{background:#edf2f4;padding:2px 4px;border-radius:3px}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid #dbe3e6;padding:10px;text-align:left;vertical-align:top}th{background:#eaf1f3}nav{display:flex;flex-wrap:wrap;gap:16px;padding:14px 0}footer{max-width:960px;margin:20px auto;padding:20px;color:#4b626c}@media(max-width:600px){main{padding:20px 16px}h1{font-size:2rem}table{display:block;overflow:auto}}@media print{body,main{background:white}pre{white-space:pre-wrap}header{padding:20px}a{color:inherit}}
-</style></head><body><header><p class="badge">macOS + Linux · Python 3.9+</p><h1>Projects, ready to build.</h1><p>project-setup 1.2.0 · Installation, Git setup, versioning and releases</p></header><main><nav><a href="usage.html">Step-by-step guide</a><a href="#install">Install</a><a href="#create-a-project">Create a project</a><a href="#git-setup">Git helpers</a><a href="#update-and-release">Releases</a><a href="#git-setup">Git reference</a></nav><h1 id="project-setup-120">project-setup 1.2.0</h1>
+</style></head><body><header><p class="badge">macOS + Linux · Python 3.9+</p><h1>Projects, ready to build.</h1><p>project-setup 1.3.0 · Installation, Git setup, versioning and releases</p></header><main><nav><a href="usage.html">Step-by-step guide</a><a href="#install">Install</a><a href="#create-a-project">Create a project</a><a href="#git-setup">Git helpers</a><a href="#update-and-release">Releases</a><a href="#git-setup">Git reference</a></nav><h1 id="project-setup-130">project-setup 1.3.0</h1>
 <p>Create agent-aware astronomy software projects on macOS and Linux. Run
 <code>project-setup</code> without arguments for step-by-step instructions. The software
 creates files and local Git history; it does not run an AI model or start a service.
@@ -12,7 +12,7 @@ Requires Python 3.9+ and Git 2.28+. Runtime uses Python's standard library.</p>
 <a href="https://github.com/prasundutta151/project-setup/releases">GitHub Releases</a>, or:</p>
 <pre><code class="language-sh">git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.2.0
+git checkout v1.3.0
 python3 install.py
 export PATH=&quot;$HOME/.local/bin:$PATH&quot;
 project-setup
@@ -269,4 +269,33 @@ Automatic runs require a clean committed repository, preserve history/remotes,
 leave changes uncommitted for review, and check required outputs before reporting
 completion of the AI run. Exit zero is not proof of scientific correctness.</p>
 <p>Refreshing never changes project licensing. See <a href="LICENSING_OPTIONS.html">licensing design notes</a>
-for the requested citation/permission policy discussion; these are not license terms.</p></main><footer>Offline user guide · project-setup · <a href="https://github.com/prasundutta151/project-setup">Source and releases</a></footer></body></html>
+for the requested citation/permission policy discussion; these are not license terms.</p>
+<h2 id="licensing-records-and-html-attribution">Licensing records and HTML attribution</h2>
+<p><code>project-lisence</code> creates a custom source-available <strong>draft</strong>, without changing
+existing licenses. New projects include <code>lisence/model-license.json</code> and
+<code>lisence/MODEL_LICENSE.txt</code>. Copy the JSON model, fill in your project metadata,
+and run:</p>
+<pre><code class="language-sh">project-lisence --project my-project --proj-dir ~/Documents \
+  --author &quot;Author Name&quot; --author-email &quot;author@example.org&quot; \
+  --author-affil &quot;Institution&quot; --doi-paper &quot;10.xxxx/example&quot; \
+  --link &quot;https://github.com/owner/my-project&quot; \
+  --lisence-file ~/Documents/my-project/lisence/model-license.json
+</code></pre>
+<p><code>--proj-dir</code> accepts the parent or the project directory. The DOI and repository
+link are optional; do not invent a DOI. <code>--lisence-file</code> (also <code>--license-file</code>)
+accepts a JSON metadata model or UTF-8 text terms template. Text placeholders are
+<code>{{project}}</code>, <code>{{author}}</code>, <code>{{author_email}}</code>, <code>{{author_affil}}</code>, <code>{{doi_paper}}</code>
+and <code>{{link}}</code>. Flags override saved/model metadata. Run while holding the project's
+agent lock if using an agent; this command does not acquire ownership or push Git.</p>
+<p>Outputs are <code>lisence/license-info.json</code>, <code>lisence/LICENSE.txt</code> and
+<code>lisence/LICENSE.html</code>. Managed attribution is added to top-level HTML and every
+HTML page under <code>docs/</code>, <code>doc/</code> and <code>lisence/</code>. Re-run after documentation generation.
+Existing unmanaged licensing files are never overwritten. The command deliberately
+keeps the policy marked draft; author approval and legal review precede adoption.
+It does not grant scientific coauthorship, retract existing rights, or replace
+third-party licenses. The proposed conditions permit use with credit, restrict
+publication of modifications to written permission and approved project versions,
+and allow unchanged inclusion with notices. See <a href="LICENSING_OPTIONS.html">licensing policy</a>.</p></main><footer>Offline user guide · project-setup · <a href="https://github.com/prasundutta151/project-setup">Source and releases</a></footer><!-- project-lisence footer begin -->
+<footer aria-label="Licensing"><p>Copyright / licensing contact: Prasun Dutta · Department of Physics, IIT (BHU), Varanasi, Varanasi 221005 · pdutta.phy@itbhu.ac.in. <a href="../lisence/LICENSE.html">Custom source-available licensing draft</a> — pending author approval.</p></footer>
+<!-- project-lisence footer end -->
+</body></html>

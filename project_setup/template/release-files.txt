@@ -8,3 +8,4 @@ json
 pipeline
 plot
 release-files.txt
+lisence

@@ -6,3 +6,4 @@ project_setup
 script
 docs
 release-files.txt
+lisence

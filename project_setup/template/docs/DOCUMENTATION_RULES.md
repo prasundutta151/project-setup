@@ -61,3 +61,12 @@ with the authorized local checkpoint. Do not publish automatically.
 Read PROJECT_DESCRIPTION.txt before generating manuals. Use its actual project
 purpose in the overview and workflow, checking claims against implemented code.
 Use documentation-prompt.txt as the portable task entry point.
+
+Licensing: preserve existing and third-party licenses. Read lisence/license-info.json
+if present. After generating any HTML page, run project-lisence --project PROJECT
+--proj-dir PARENT with that metadata (inspect --help); retain the managed footer
+on every documentation HTML page, including nested pages. Draft licensing must
+remain visibly draft. If author metadata is missing, request it; never assume the
+tooling author owns the new project. lisence/model-license.json and MODEL_LICENSE.txt
+provide the reusable metadata and custom policy draft. Do not automatically adopt
+new legal terms. Documentation generation remains explicitly requested only.

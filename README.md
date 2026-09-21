@@ -1,4 +1,4 @@
-# project-setup 1.2.0
+# project-setup 1.3.0
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
 `project-setup` without arguments for step-by-step instructions. The software
@@ -13,7 +13,7 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.2.0
+git checkout v1.3.0
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
@@ -309,3 +309,35 @@ completion of the AI run. Exit zero is not proof of scientific correctness.
 
 Refreshing never changes project licensing. See [licensing design notes](docs/LICENSING_OPTIONS.md)
 for the requested citation/permission policy discussion; these are not license terms.
+
+## Licensing records and HTML attribution
+
+`project-lisence` creates a custom source-available **draft**, without changing
+existing licenses. New projects include `lisence/model-license.json` and
+`lisence/MODEL_LICENSE.txt`. Copy the JSON model, fill in your project metadata,
+and run:
+
+```sh
+project-lisence --project my-project --proj-dir ~/Documents \
+  --author "Author Name" --author-email "author@example.org" \
+  --author-affil "Institution" --doi-paper "10.xxxx/example" \
+  --link "https://github.com/owner/my-project" \
+  --lisence-file ~/Documents/my-project/lisence/model-license.json
+```
+
+`--proj-dir` accepts the parent or the project directory. The DOI and repository
+link are optional; do not invent a DOI. `--lisence-file` (also `--license-file`)
+accepts a JSON metadata model or UTF-8 text terms template. Text placeholders are
+`{{project}}`, `{{author}}`, `{{author_email}}`, `{{author_affil}}`, `{{doi_paper}}`
+and `{{link}}`. Flags override saved/model metadata. Run while holding the project's
+agent lock if using an agent; this command does not acquire ownership or push Git.
+
+Outputs are `lisence/license-info.json`, `lisence/LICENSE.txt` and
+`lisence/LICENSE.html`. Managed attribution is added to top-level HTML and every
+HTML page under `docs/`, `doc/` and `lisence/`. Re-run after documentation generation.
+Existing unmanaged licensing files are never overwritten. The command deliberately
+keeps the policy marked draft; author approval and legal review precede adoption.
+It does not grant scientific coauthorship, retract existing rights, or replace
+third-party licenses. The proposed conditions permit use with credit, restrict
+publication of modifications to written permission and approved project versions,
+and allow unchanged inclusion with notices. See [licensing policy](docs/LICENSING_OPTIONS.md).

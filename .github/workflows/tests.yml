@@ -20,3 +20,5 @@ jobs:
       - run: '"$RUNNER_TEMP/project-setup-install/bin/project-setup" --git-setup guide'
 
       - run: python -m unittest discover -s project_setup/template/tests -v
+
+      - run: '"$RUNNER_TEMP/project-setup-install/bin/project-lisence" --project smoke --proj-dir "$RUNNER_TEMP" --author "Test Author" --author-email "test@example.org" --author-affil "Test Institute"'

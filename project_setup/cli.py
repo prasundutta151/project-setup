@@ -17,7 +17,7 @@ import tarfile
 import tempfile
 
 VERSION_RE = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]?)\.(0|[1-9][0-9]?)\Z')
-DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 'tests', 'data')
+DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 'tests', 'data', 'lisence')
 
 
 class Error(Exception):
@@ -331,13 +331,13 @@ def scaffold(args):
         # Compatibility pointer; there is only one authoritative rule set.
         (root / 'developer/AGENT_RULES.md').write_text('Read and follow ../AGENTS.md at the project root. Do not use the old boolean .agent_lock protocol.\n')
         (root / 'startup-prompt.txt').write_text('Continue this project from the directory containing this file. Read AGENTS.md and docs/CONTEXT_WORKFLOW.md. Acquire a fresh session lock, check context and read HANDOFF.md and recent developer/DEV_NOTES.md as required. Follow docs/DOCUMENTATION_RULES.md; generate manuals only on request. Ask for missing science requirements and perform the user-requested task. Do not recreate this project or copy Model_Project again.\n')
-        (root / 'release-files.txt').write_text('version/VERSION\nversion/CHANGELOG.txt\nREADME.md\nPROJECT_DESCRIPTION.txt\nscript\ndocs\njson\npipeline\nplot\nrelease-files.txt\n')
+        (root / 'release-files.txt').write_text('version/VERSION\nversion/CHANGELOG.txt\nREADME.md\nPROJECT_DESCRIPTION.txt\nscript\ndocs\nlisence\njson\npipeline\nplot\nrelease-files.txt\n')
         write_updater(root)
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.2.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.2.0'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.3.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.3.0'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -363,7 +363,7 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.2.0 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.3.0 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"

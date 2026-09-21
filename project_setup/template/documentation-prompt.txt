@@ -18,3 +18,12 @@ report that and request its location. Follow any explicit user-specified alterna
 method. Do not silently install a different tool or claim successful generation.
 Validate links, examples and rendered output; record results and pending items in
 developer/DEV_NOTES.md and HANDOFF.md, then checkpoint reviewed changes.
+
+Licensing: preserve existing and third-party licenses. Read lisence/license-info.json
+if present. After generating any HTML page, run project-lisence --project PROJECT
+--proj-dir PARENT with that metadata (inspect --help); retain the managed footer
+on every documentation HTML page, including nested pages. Draft licensing must
+remain visibly draft. If author metadata is missing, request it; never assume the
+tooling author owns the new project. lisence/model-license.json and MODEL_LICENSE.txt
+provide the reusable metadata and custom policy draft. Do not automatically adopt
+new legal terms. Documentation generation remains explicitly requested only.

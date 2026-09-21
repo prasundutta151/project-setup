@@ -1,3 +1,18 @@
+## 2026-09-21 08:43:44 IST
+
+Prompt / Request
+- Add project-lisence, custom licensing models and HTML author attribution; release version 1.3.0.
+
+Changes Made
+- Added metadata/text-template command, protected draft records, idempotent escaped HTML footers, installer and template integration.
+- Added Prasun Dutta's supplied licensing contact to project-setup documentation.
+
+Verification
+- Licensing unit tests, full CLI tests, template context tests, installation and scaffold smoke checks.
+
+Notes
+- Agent: Codex; computer: comet. Custom terms remain draft pending author/legal review; no existing license replaced.
+
 # project-setup Developer Notes
 
 This file is the running developer log for project-setup. Add a new timestamped entry whenever the code, plans, packaging, or workflow changes.

@@ -1,0 +1,39 @@
+project-lisence managed draft
+DRAFT — NOT AN EFFECTIVE LICENSE GRANT; requires author and legal review.
+
+CUSTOM SOURCE-AVAILABLE TERMS — PROPOSED POLICY
+Project: project-setup
+Author and licensing contact: Prasun Dutta
+Affiliation: Department of Physics, IIT (BHU), Varanasi, Varanasi 221005
+Email: pdutta.phy@itbhu.ac.in
+Paper DOI: (not supplied)
+Repository: https://github.com/prasundutta151/project-setup
+
+1. Use and attribution. Anyone may use the original software and privately modify
+it. Publications using it must acknowledge the project author and credited team,
+and cite the associated paper when supplied, otherwise the repository and version.
+Retain copyright, citation and third-party notices in redistributed copies.
+
+2. Modified code. Public distribution of modified code requires prior written
+permission from the author/rightsholder. Permission should identify the changes,
+permitted distribution and contribution credit. Approved changes are intended to
+be published as a version or branch of this project, not as a renamed independent
+project. Repository access and branch acceptance require separate authorization.
+This policy does not purport to override hosting-platform fork permissions.
+
+3. Inclusion in another project. The original, unchanged software may be included
+with attribution and these notices. Modified bundled versions require the written
+permission described above. Third-party components retain their own licenses;
+this policy only concerns code controlled by the project rightsholder.
+
+4. Scientific credit. Acknowledgment and citation are required by this proposed
+policy. Scientific coauthorship must reflect scholarly contribution and applicable
+journal rules; use, permission, or a Git branch alone does not confer coauthorship.
+
+5. Warranty. To the extent permitted by applicable law, the software is supplied
+as is, without warranty; authors disclaim liability for its use.
+
+REVIEW REQUIRED: This is a proposed custom source-available policy, not an OSI
+open-source license. Confirm ownership, existing grants, precise scope, permission
+procedure, enforceability and effective date with qualified counsel before adoption.
+It does not revoke previously granted rights or replace an existing license.
