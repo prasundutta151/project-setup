@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-setup"
-version = "1.1.0"
+version = "1.1.1"
 description = "Portable macOS/Linux project scaffolding and release CLI"
 requires-python = ">=3.9"
 

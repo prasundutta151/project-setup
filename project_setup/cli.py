@@ -336,8 +336,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.1.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.1.0'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.1.1; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.1.1'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -363,7 +363,7 @@ def scaffold(args):
 
 
 def startup_guide():
-    print("""project-setup 1.1.0 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.1.1 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -380,11 +380,9 @@ No service or background agent is started. Python 3.9+ and Git 2.28+ are require
 
 
 def setup_main():
-    if len(sys.argv) > 1 and sys.argv[1] == '--git-setup':
-        from .gitsetup import main
-        main(sys.argv[2:])
-        return
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
+    p.add_argument('--git-setup', nargs=argparse.REMAINDER, metavar='COMMAND',
+                   help='Git helpers: guide, configure, new, clone, update. Example: project-setup --git-setup guide; put helper arguments after this option.')
     p.add_argument('--project', help='New project name, or optional clone destination name')
     p.add_argument('--from-git', metavar='PROJECT', help='Clone NAME or OWNER/REPO without overlaying the template')
     p.add_argument('--proj-description', help='Description text or UTF-8/ASCII text-file path; @PATH explicitly selects a file')
@@ -395,6 +393,10 @@ def setup_main():
     p.add_argument('--create-remote', action='store_true', help='Create a private GitHub repository if missing; defaults to authenticated account/PROJECT')
     p.add_argument('--git-push', action='store_true', help='Ensure remote exists, commit and push the new project')
     args = p.parse_args()
+    if args.git_setup is not None:
+        from .gitsetup import main
+        main(args.git_setup)
+        return
     if args.guide or len(sys.argv) == 1:
         startup_guide()
         return

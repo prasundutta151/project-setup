@@ -224,6 +224,14 @@ class Integration(unittest.TestCase):
         self.setup_cli('--from-git','Conflict','--remote',str(self.base/'remote.git'),'--proj-dir',str(self.base),'--proj-description','Different description',ok=False)
         self.assertEqual((self.base/'Conflict/PROJECT_DESCRIPTION.txt').read_text(),(self.root/'PROJECT_DESCRIPTION.txt').read_text())
 
+    def test_git_setup_discoverable_help_and_dispatch(self):
+        help_text = self.setup_cli('--help').stdout
+        self.assertIn('--git-setup ...',help_text)
+        self.assertIn('project-setup --git-setup guide',help_text)
+        for args in [('--git-setup','guide'), ('--git-setup',)]:
+            self.assertIn('Git and GitHub setup',self.setup_cli(*args).stdout)
+        self.assertIn('configure',self.setup_cli('--git-setup','--help').stdout)
+
     def test_first_push_on_unborn_branch(self):
         self.remote()
         # Remove the sole test commit's branch ref to recreate an unborn branch.

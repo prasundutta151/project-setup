@@ -19,6 +19,21 @@ Notes
 - Follow-up context, assumptions, or cautions.
 ```
 
+## 2026-09-21 02:22:06 UTC
+
+Prompt / Request
+- Make project-setup --git-setup guide discoverable in --help.
+
+Changes Made
+- Registered --git-setup in the primary argparse options and forwarded the remaining helper arguments.
+- Version 1.1.1; refreshed standalone updater copies and installation reference.
+
+Verification
+- PASS: focused help/dispatch regression test checks option listing, guide, no-subcommand guide and nested --help.
+
+Notes
+- Helper implementation unchanged; the previous early dispatch hid it from the options list.
+
 ## 2026-09-21 02:09:02 UTC
 
 Prompt / Request

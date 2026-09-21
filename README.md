@@ -1,4 +1,4 @@
-# project-setup 1.1.0
+# project-setup 1.1.1
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
 `project-setup` without arguments for step-by-step instructions. The software
@@ -13,7 +13,7 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.1.0
+git checkout v1.1.1
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
