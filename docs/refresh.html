@@ -7,10 +7,30 @@ Antigravity, ChatGPT, Claude, OpenCode and Manual. Without a terminal it default
 to Manual. Use --ai antigravity|chatgpt|claude|opencode|manual to select explicitly.</p>
 <p>Preparation reads the existing project and writes a migration prompt and request
 metadata outside it, under macOS ~/Library/Caches/project-setup/refresh or Linux
-~/.cache/project-setup/refresh. No target files change in preparation/manual mode.
-The full prompt is printed for copying into an agent, and its file path is shown.
+~/.cache/project-setup/refresh. Apart from the pre-refresh backup described below,
+no target files change in preparation/manual mode. The full prompt is printed for
+copying into an agent, and its file path is shown.
 If using a browser/chat agent, give it filesystem access or provide the referenced
 project/template files; a prompt alone cannot edit files on your computer.</p>
+<h2 id="pre-refresh-backup">Pre-refresh backup</h2>
+<p>Before any migration edit, refresh copies the whole existing project to
+PROJECT/PROJECT.org inside the project itself (for example ABCD/ABCD.org). The
+copy includes hidden files and .git but never the backup folder itself, and the
+backup name is added to .git/info/exclude for repositories rooted at the project,
+so it stays out of git status, diffs and commits. The migration prompt instructs
+the agent to treat the backup as read-only and to keep it out of release-files.txt
+and every migration mapping.</p>
+<p>If PROJECT/PROJECT.org already exists it is kept unchanged and refresh continues
+with it as the snapshot; delete it yourself if you want a fresh copy. A backup
+interrupted mid-copy leaves PROJECT/PROJECT.org.partial, which is reported and
+cleaned up automatically on the next run, so an existing .org directory is always
+a complete backup.</p>
+<p>The project size is measured before copying. Above 100 MB refresh prints a warning
+with the measured size and asks for confirmation in a terminal: answer y/yes to
+proceed with the copy, anything else stops the refresh before any project file
+changes. Without a terminal, a project over 100 MB is refused rather than copied
+unattended. The measured size includes .git history, so an old repository can
+cross the limit even when its working files look small.</p>
 <h2 id="automatic-invocation-optional">Automatic invocation (optional)</h2>
 <p>There is no assumed universal command for the listed applications. Configure the
 actual installed agent interface, including how it reads a prompt file:</p>

@@ -35,9 +35,9 @@ class RefreshTests(unittest.TestCase):
     def git(self,*args):
         return subprocess.run(['git','-C',str(self.root),*args],env=self.env,text=True,capture_output=True,check=True).stdout
 
-    def call(self,*args,code=0):
+    def call(self,*args,code=0,stdin=None):
         r=subprocess.run([sys.executable,'-c','from project_setup.cli import setup_main; setup_main()',
-                          '--refresh','OldProject','--proj-dir',str(self.base),*args],env=self.env,text=True,capture_output=True)
+                          '--refresh','OldProject','--proj-dir',str(self.base),*args],env=self.env,text=True,capture_output=True,input=stdin)
         self.assertEqual(r.returncode,code,r.stderr+r.stdout)
         return r
 
@@ -50,6 +50,71 @@ class RefreshTests(unittest.TestCase):
         self.assertIn('Preserve this science project.',(self.root/'README.md').read_text())
         prompt=next((self.base/'home').rglob('refresh-prompt.txt'))
         self.assertFalse(prompt.is_relative_to(self.root))
+        self.assertIn('PRE-REFRESH BACKUP',prompt.read_text())
+        self.assertEqual(json.loads(next((self.base/'home').rglob('request.json')).read_text())['backup'],
+                         str(self.root/'OldProject.org'))
+
+    def test_backup_created_inside_project_and_hidden_from_git(self):
+        result=self.call('--ai','manual')
+        backup=self.root/'OldProject.org'
+        self.assertTrue(backup.is_dir())
+        self.assertEqual((backup/'README.md').read_text(),'Preserve this science project.\n')
+        self.assertIn('Pre-refresh backup created at',result.stdout)
+        self.assertEqual(self.git('status','--porcelain'),'')
+        self.assertIn('OldProject.org/',(self.root/'.git'/'info'/'exclude').read_text())
+        # A later refresh keeps the existing backup instead of overwriting it.
+        (self.root/'README.md').write_text('Changed after the backup.\n')
+        result=self.call('--ai','manual')
+        self.assertIn('already exists',result.stdout)
+        self.assertEqual((backup/'README.md').read_text(),'Preserve this science project.\n')
+        self.assertNotIn('OldProject.org',self.git('status','--porcelain'))
+
+    def backup_args(self):
+        return Namespace(refresh='OldProject',proj_dir=str(self.base),ai='manual',ai_command=None,description=None)
+
+    def test_over_limit_backup_warns_and_asks_permission(self):
+        with patch.dict(os.environ,self.env,clear=True), \
+             patch.object(refresh,'BACKUP_LIMIT_BYTES',10), \
+             patch('sys.stdin.isatty',return_value=True), \
+             patch('builtins.input',return_value='y'), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            refresh.refresh_project(self.backup_args())
+        self.assertIn('WARNING',output.getvalue())
+        self.assertIn('pre-refresh backup limit',output.getvalue())
+        self.assertTrue((self.root/'OldProject.org'/'README.md').is_file())
+        self.assertEqual(self.git('status','--porcelain'),'')
+
+    def test_over_limit_backup_declined_stops_before_copy(self):
+        with patch.dict(os.environ,self.env,clear=True), \
+             patch.object(refresh,'BACKUP_LIMIT_BYTES',10), \
+             patch('sys.stdin.isatty',return_value=True), \
+             patch('builtins.input',return_value='n'), \
+             self.assertRaisesRegex(cli.Error,'Backup declined'):
+            refresh.refresh_project(self.backup_args())
+        self.assertFalse((self.root/'OldProject.org').exists())
+        self.assertFalse((self.root/'OldProject.org.partial').exists())
+        self.assertEqual(self.git('status','--porcelain'),'')
+
+    def test_over_limit_backup_refused_without_terminal(self):
+        with patch.dict(os.environ,self.env,clear=True), \
+             patch.object(refresh,'BACKUP_LIMIT_BYTES',10), \
+             patch('sys.stdin.isatty',return_value=False), \
+             self.assertRaisesRegex(cli.Error,'too large'):
+            refresh.refresh_project(self.backup_args())
+        self.assertFalse((self.root/'OldProject.org').exists())
+        self.assertEqual(self.git('status','--porcelain'),'')
+
+    def test_stale_partial_backup_is_removed_before_copying(self):
+        stale=self.root/'OldProject.org.partial'
+        stale.mkdir(); (stale/'fragment').write_text('interrupted\n')
+        with patch.dict(os.environ,self.env,clear=True), \
+             patch('sys.stdin.isatty',return_value=False), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            refresh.refresh_project(self.backup_args())
+        self.assertIn('Removing stale partial backup',output.getvalue())
+        self.assertFalse(stale.exists())
+        self.assertTrue((self.root/'OldProject.org'/'README.md').is_file())
+        self.assertEqual(self.git('status','--porcelain'),'')
 
     def test_named_agent_without_command_falls_back_honestly(self):
         for name in ('antigravity','chatgpt','claude','opencode'):

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import socket
 import subprocess
 import sys
@@ -18,6 +19,64 @@ REQUIRED_FILES = ('AGENTS.md', 'HANDOFF.md', 'PROJECT_DESCRIPTION.txt',
                   'developer/DEV_NOTES.md', 'script/project-update',
                   'script/agent_lock.py', 'script/agent_context.py',
                   'version/VERSION', 'version/CHANGELOG.txt', 'release-files.txt')
+
+BACKUP_LIMIT_BYTES = 100 * 1024 * 1024
+PARTIAL_SUFFIX = '.partial'
+
+
+def _backup_size(root: Path, skip: Path) -> int:
+    """Total file size under root, ignoring an existing/pre-existing backup directory."""
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if Path(dirpath, name) != skip]
+        for name in filenames:
+            try:
+                total += (Path(dirpath) / name).lstat().st_size
+            except OSError:
+                continue
+    return total
+
+
+def _make_backup(root: Path) -> Path:
+    """Copy the untouched project to <name>.org before refresh edits it."""
+    backup = root / (root.name + '.org')
+    if backup.is_dir():
+        print('Pre-refresh backup already exists at ' + str(backup)
+              + '; it is kept unchanged. Delete it first if you want a fresh copy.')
+        return backup
+    if backup.exists():
+        raise Error('Backup target exists and is not a directory: ' + str(backup))
+    partial = root / (root.name + '.org' + PARTIAL_SUFFIX)
+    if partial.exists():
+        print('Removing stale partial backup from an interrupted copy: ' + str(partial))
+        shutil.rmtree(partial) if partial.is_dir() else partial.unlink()
+    size = _backup_size(root, backup)
+    if size > BACKUP_LIMIT_BYTES:
+        print('WARNING: project size %.1f MB exceeds the %d MB pre-refresh backup limit.'
+              % (size / (1024 * 1024), BACKUP_LIMIT_BYTES // (1024 * 1024)))
+        if not sys.stdin.isatty():
+            raise Error('The project is too large to back up without confirmation; '
+                        're-run in a terminal to approve copying it to ' + backup.name + '.')
+        if input('Copy the whole project to ' + backup.name + ' anyway? [y/N]: ').strip().lower() not in ('y', 'yes'):
+            raise Error('Backup declined; refresh stopped before changing any project files.')
+    try:
+        # Copy to a temporary sibling first so an interrupted run never leaves a
+        # directory that later refreshes would mistake for a complete backup.
+        shutil.copytree(root, partial, symlinks=True,
+                        ignore=shutil.ignore_patterns(backup.name, partial.name))
+        partial.rename(backup)
+    except BaseException:
+        if partial.exists():
+            shutil.rmtree(partial, ignore_errors=True)
+        raise
+    exclude = root / '.git' / 'info' / 'exclude'
+    if exclude.parent.is_dir():
+        entry = backup.name + '/'
+        lines = exclude.read_text().splitlines() if exclude.is_file() else []
+        if entry not in [line.strip() for line in lines]:
+            exclude.write_text('\n'.join(lines + [entry]) + '\n')
+    print('Pre-refresh backup created at: ' + str(backup))
+    return backup
 
 
 def refresh_project(args) -> None:
@@ -49,6 +108,7 @@ def refresh_project(args) -> None:
     if selected == 'manual': command = None
     metadata = {'project': str(root), 'template': str(template), 'initial_commit': head,
                 'git_repository': is_repo, 'template_version': '1.5.0',
+                'backup': str(root / (root.name + '.org')),
                 'description_override': args.description, 'selected_ai': selected}
     (packet/'request.json').write_text(json.dumps(metadata, indent=2)+'\n')
     prompt = packet/'refresh-prompt.txt'
@@ -58,6 +118,7 @@ Project: {root}
 Reference template: {template}
 Request metadata (description override if supplied): {packet / 'request.json'}
 Initial Git checkpoint: {head or 'none'}
+Pre-refresh backup: {root / (root.name + '.org')}
 
 This is the user's request to adapt this existing project to the current
 project-setup format using your reasoning and editing tools. Do not just summarize
@@ -77,6 +138,12 @@ if no protocol exists. Never remove a foreign lock. Before substantive edits,
 ensure this project has its own Git repo and a reviewed baseline commit. Preserve
 pre-existing modifications; if no safe baseline can be made, report the blocker.
 Never push, publish, change a remote/license, or alter repository history.
+
+PRE-REFRESH BACKUP
+A complete copy of this project as it stood before this refresh exists at the
+backup path above. Treat it as strictly read-only user rollback material: never
+edit, migrate, map, package (release-files.txt), git add/commit, or delete it,
+and keep it out of every migration mapping and validation run.
 
 MIGRATION, NOT BLIND COPY
 1. Inspect the actual layout and record a before/after mapping and migration plan
@@ -118,7 +185,8 @@ fails. Release your lock only if you acquired it yourself, not a launcher sessio
 ''')
     print('Refresh prompt: ' + str(prompt))
     if not command:
-        print(f'PREPARED ONLY for {selected}: project files have not changed.')
+        _make_backup(root)
+        print(f'PREPARED ONLY for {selected}: no project files changed except the {root.name}.org backup.')
         print('Copy the following prompt into your chosen agent (give it access to the referenced project/template files):')
         print(prompt.read_text())
         if selected != 'manual':
@@ -138,6 +206,7 @@ fails. Release your lock only if you acquired it yourself, not a launcher sessio
     if not any('{prompt_file}' in part for part in argv):
         raise Error('--ai-command must include {prompt_file}; tokens may also use {project_dir}. No shell is invoked.')
     argv = [part.replace('{prompt_file}', str(prompt)).replace('{project_dir}', str(root)) for part in argv]
+    _make_backup(root)
     origin = git(root, 'remote', '-v')
     manage_lock(root, 'acquire', None, 'project-setup-refresh', '1.5.0')
     owner_path = root/'.agent-state/lock/owner.json'

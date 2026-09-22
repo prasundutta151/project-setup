@@ -359,10 +359,15 @@ prints a complete migration prompt and changes no project files. Named choices
 also print the prompt when no command is configured. Use --ai-command containing
 {prompt_file}, or PROJECT_SETUP_AI_COMMAND_<AGENT>, for your actual installed
 agent CLI. No app-specific invocation or model credentials are guessed.
-See [refresh instructions](docs/refresh.md) for execution and ownership rules.
 Automatic runs require a clean committed repository, preserve history/remotes,
 leave changes uncommitted for review, and check required outputs before reporting
 completion of the AI run. Exit zero is not proof of scientific correctness.
+
+Before anything is edited, refresh copies the untouched project to
+PROJECT/PROJECT.org inside the project — asking permission in the terminal first
+if it exceeds 100 MB — so migration edits can always be compared against, or
+rolled back to, the original. The backup is excluded from Git status and commits.
+See [refresh instructions](docs/refresh.md) for execution and ownership rules.
 
 Refreshing never changes project licensing. See [licensing design notes](docs/LICENSING_OPTIONS.md)
 for the requested citation/permission policy discussion; these are not license terms.

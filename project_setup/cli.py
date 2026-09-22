@@ -676,7 +676,7 @@ def setup_main():
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
     p.add_argument('--git-setup', nargs=argparse.REMAINDER, metavar='COMMAND',
                    help='Git helpers: guide, configure, new, clone, update. Example: project-setup --git-setup guide; put helper arguments after this option.')
-    p.add_argument('--refresh', metavar='PROJECT', help='Prepare an AI migration of an existing project to this template')
+    p.add_argument('--refresh', metavar='PROJECT', help='Prepare an AI migration of an existing project to this template; first copies it to PROJECT/PROJECT.org (asks permission above 100 MB)')
     p.add_argument('--ai', choices=['antigravity', 'chatgpt', 'claude', 'opencode', 'manual'], help='Refresh agent; interactive menu if omitted, manual for noninteractive use')
     p.add_argument('--ai-command', help='Refresh agent command containing {prompt_file}; optional {project_dir}, no shell. Default: PROJECT_SETUP_AI_COMMAND')
     p.add_argument('--project', help='New project name, or optional clone destination name')

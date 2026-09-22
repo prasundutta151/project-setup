@@ -1,3 +1,21 @@
+## 2026-09-22 09:24:53 IST
+
+Prompt / Request
+- Add a pre-refresh backup to --refresh: before any migration edits, copy the existing project to PROJECT/PROJECT.org inside the project, and if the project exceeds 100 MB print a warning and ask the user's permission before proceeding.
+
+Changes Made
+- refresh.py measures project size with an lstat walk (backup folder excluded), prints a WARNING with the measured size above BACKUP_LIMIT_BYTES (100 MB) and prompts y/yes in a terminal; without a terminal an over-limit project is refused, and a declined answer raises before any project file changes.
+- The copy is written to PROJECT.org.partial and renamed on success, so an existing PROJECT.org is always a complete backup; a stale partial is reported and removed on the next run, and an existing backup is kept unchanged rather than overwritten.
+- PROJECT.org/ is appended to .git/info/exclude so the backup never appears in git status, diffs or commits; the migration prompt gains a PRE-REFRESH BACKUP read-only rule (no edits, mapping, release-files.txt or commits) and request.json records the backup path.
+- Updated the manual/prepared output wording, --refresh help text, README refresh section and docs/refresh.md (new Pre-refresh backup section replacing the "no target files change" guarantee); rebuilt offline HTML/TXT guides.
+
+Verification
+- PASS: 80 tests via python3 -m unittest discover -s testdirectory (75 existing plus 5 new backup tests: creation with Git exclusion, existing-backup reuse, permission granted, permission declined, non-terminal refusal, stale-partial cleanup).
+- Regenerated docs with developer/script/build_docs.py.
+
+Notes
+- The backup deliberately changes the old "preparation/manual mode touches no target files" guarantee; documentation and tests updated together. Version bump and push deferred to the follow-up no-argument help release.
+
 ## 2026-09-22 08:59:19 IST
 
 Prompt / Request
