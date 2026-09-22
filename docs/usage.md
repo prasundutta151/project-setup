@@ -1,4 +1,4 @@
-# project-setup 1.3.0 — step-by-step guide
+# project-setup 1.5.0 — step-by-step guide
 
 ## 1. Install and discover commands
 
@@ -91,3 +91,29 @@ a migration prompt for your agent. Automatic execution needs an explicitly
 configured agent command and clean Git baseline. See refresh.md/refresh.html.
 Review the resulting developer/REFRESH_REPORT.md and changes before committing.
 No license change or automatic migration of every repository is performed.
+
+## 9. Plan a data workspace
+
+```sh
+project-setup --project SKA --proj-dir ~/Documents --data-dir --dry-run
+project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data raw calibrated
+project-setup --project SKA --proj-dir ~/Documents --data-dir ~/lists/ska-dirs.txt
+project-setup --project SKA --proj-dir ~/Documents --show
+project-setup --project SKA --proj-dir ~/Documents --json
+```
+
+`--data-dir` accepts no value (default root `/Volumes/Work/Data`), one
+directory-list file (one relative directory per line, or a JSON preset with a
+`subfolders` list), one absolute data root where the project directory is
+created, or directory entries that use `/` for nesting; one root may be
+combined with one file or entries. `--dry-run` previews every path a run would
+create — project, setup directories, Git steps, data root, data path,
+subfolders and the configuration file — and writes nothing. `--show` reports an
+existing project's version, setup directories, data workspace, `json/` folder
+path and configuration path. `--json [PATH]` selects the data configuration
+file inside the project (implying workspace creation) or, without a value,
+prints the configuration file path. All paths are checked first: existing
+paths report `exists`, missing paths are created when permitted, and blocked
+volumes or permission failures are reported in the terminal before the project
+is created. The workspace is recorded in `<project>/data-path.json`. See README
+for the full rules and `project-data --help` for later reconfiguration.

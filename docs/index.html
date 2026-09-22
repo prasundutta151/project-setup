@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>project-setup — User Guide</title><style>
 :root{color-scheme:light;--ink:#182b3a;--accent:#075e69}*{box-sizing:border-box}body{margin:0;background:#f2f5f7;color:var(--ink);font:17px/1.65 system-ui,sans-serif}header{background:#123640;color:white;padding:42px max(24px,calc((100% - 960px)/2))}header p{margin:0;opacity:.85}.badge{font-size:13px;text-transform:uppercase;letter-spacing:2px}main{max-width:1000px;margin:0 auto;padding:32px 32px 80px;background:white}h1{font-size:2.5rem;line-height:1.15}h2{margin-top:2.3em;border-bottom:1px solid #dbe3e6;padding-bottom:.4em}h3{margin-top:2em}a{color:var(--accent)}pre{background:#102d38;color:#e8f2f5;padding:20px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.6}code{font-family:ui-monospace,monospace;font-size:.88em}p code,li code,td code{background:#edf2f4;padding:2px 4px;border-radius:3px}table{border-collapse:collapse;width:100%;font-size:15px}th,td{border:1px solid #dbe3e6;padding:10px;text-align:left;vertical-align:top}th{background:#eaf1f3}nav{display:flex;flex-wrap:wrap;gap:16px;padding:14px 0}footer{max-width:960px;margin:20px auto;padding:20px;color:#4b626c}@media(max-width:600px){main{padding:20px 16px}h1{font-size:2rem}table{display:block;overflow:auto}}@media print{body,main{background:white}pre{white-space:pre-wrap}header{padding:20px}a{color:inherit}}
-</style></head><body><header><p class="badge">macOS + Linux · Python 3.9+</p><h1>Projects, ready to build.</h1><p>project-setup 1.3.0 · Installation, Git setup, versioning and releases</p></header><main><nav><a href="usage.html">Step-by-step guide</a><a href="#install">Install</a><a href="#create-a-project">Create a project</a><a href="#git-setup">Git helpers</a><a href="#update-and-release">Releases</a><a href="#git-setup">Git reference</a></nav><h1 id="project-setup-130">project-setup 1.3.0</h1>
+</style></head><body><header><p class="badge">macOS + Linux · Python 3.9+</p><h1>Projects, ready to build.</h1><p>project-setup 1.5.0 · Installation, Git setup, versioning and releases</p></header><main><nav><a href="usage.html">Step-by-step guide</a><a href="#install">Install</a><a href="#create-a-project">Create a project</a><a href="#data-workspace">Data workspace</a><a href="#git-setup">Git helpers</a><a href="#update-and-release">Releases</a><a href="#git-setup">Git reference</a></nav><h1 id="project-setup-150">project-setup 1.5.0</h1>
 <p>Create agent-aware astronomy software projects on macOS and Linux. Run
 <code>project-setup</code> without arguments for step-by-step instructions. The software
 creates files and local Git history; it does not run an AI model or start a service.
@@ -12,19 +12,20 @@ Requires Python 3.9+ and Git 2.28+. Runtime uses Python's standard library.</p>
 <a href="https://github.com/prasundutta151/project-setup/releases">GitHub Releases</a>, or:</p>
 <pre><code class="language-sh">git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.3.0
+git checkout v1.5.0
 python3 install.py
 export PATH=&quot;$HOME/.local/bin:$PATH&quot;
 project-setup
 </code></pre>
 <p>Add that PATH line to your shell profile if needed. The installer does not edit
-shell configuration or require sudo. It installs three managed commands under
-<code>~/.local/bin</code>: project-setup, project-update and git-setup; package and template
-files go under <code>~/.local/lib/project-setup/</code>. <code>--prefix /path</code> selects another
-prefix. Unrelated commands are refused. Re-run the installer to upgrade.
-Alternatively use <code>python3 -m pip install .</code> in a virtual environment.
-Uninstall by removing these three managed launchers, the installed
-<code>lib/project-setup</code> directory and <code>share/project-setup</code> guide directory.</p>
+shell configuration or require sudo. It installs five managed commands under
+<code>~/.local/bin</code>: project-setup, project-update, git-setup, project-lisence and
+project-data; package and template files go under <code>~/.local/lib/project-setup/</code>.
+<code>--prefix /path</code> selects another prefix. <code>--without-project-data</code> or
+<code>--project-data-only</code> limit the installed set. Unrelated commands are refused.
+Re-run the installer to upgrade. Alternatively use <code>python3 -m pip install .</code>
+in a virtual environment. Uninstall by removing these managed launchers, the
+installed <code>lib/project-setup</code> directory and <code>share/project-setup</code> guide directory.</p>
 <h2 id="create-a-project">Create a project</h2>
 <pre><code class="language-sh">project-setup
 project-setup --project StarAnalysis --proj-dir ~/Projects \
@@ -63,6 +64,54 @@ how to finish it. No remote is created unless explicitly requested.</p>
 GDP-derived documentation contract are bundled. Creation does not implement a
 scientific algorithm, install scientific commands or generate scientific plots.
 Those tasks belong to the project's subsequent development.</p>
+<h2 id="data-workspace">Data workspace</h2>
+<p><code>--data-dir</code> plans an external data workspace while creating a project, so code
+stays in the project and data lives on another drive. The project's data
+directory (<code>&lt;root&gt;/&lt;project&gt;</code>) is created inside the chosen root:</p>
+<pre><code class="language-sh">project-setup --project SKA --proj-dir ~/Documents --data-dir   # default root /Volumes/Work/Data
+project-setup --project SKA --data-dir /mnt/work/Data           # one absolute PATH is the data root
+project-setup --project SKA --data-dir raw calibrated images/plots   # directory entries; / nests
+project-setup --project SKA --data-dir ~/lists/ska-dirs.txt     # ASCII file: one directory per line
+project-setup --project SKA --data-dir /mnt/work/Data ~/lists/gdp.txt  # root and file together
+</code></pre>
+<p>Resolution rules for <code>--data-dir</code> values: no value uses the default root
+<code>/Volumes/Work/Data</code> with the default tree <code>raw processed outputs cache</code>; one
+existing file is a directory-list file (one relative directory per line, <code>#</code>
+comments ignored; a JSON preset with a <code>subfolders</code> list also works, see the
+bundled <code>data-config</code> presets); one absolute or <code>~</code> path is the data root where
+the project directory is created; every other value is a relative directory
+entry, and <code>/</code> describes nesting. At most one root and one file may be given,
+and entries cannot be combined with a file. A missing <code>--data-dir</code> file with a
+<code>.txt</code>/<code>.lst</code>/<code>.list</code>/<code>.json</code> suffix is reported instead of becoming a folder.
+The default root must be mounted; an unmounted <code>/Volumes/&lt;drive&gt;</code> is refused
+rather than silently creating a substitute on the internal disk. The workspace
+and its subfolders are recorded in <code>&lt;project&gt;/data-path.json</code>.</p>
+<p>Companion options:</p>
+<pre><code class="language-sh">project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data --dry-run
+project-setup --project SKA --proj-dir ~/Documents --show
+project-setup --project SKA --proj-dir ~/Documents --json
+project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data \
+  --json ~/Documents/SKA/data-path.json
+</code></pre>
+<ul>
+<li><code>--dry-run</code> previews everything a run would create — project directory, setup
+  directories, Git steps, data root, data path, every subfolder and the
+  configuration file — and writes nothing.</li>
+<li><code>--show</code> reports an existing project without changing it: version, setup
+  directories, the data workspace (root, data path, subfolders), the <code>json/</code>
+  folder path and the configuration file path.</li>
+<li><code>--json [PATH]</code> selects the configuration JSON file (a file or directory
+  inside the project) and implies workspace creation; without a value it prints
+  the configuration file path.</li>
+</ul>
+<p>Every requested path is checked before anything is created: existing paths are
+reported as <code>exists</code>, missing paths are created when permitted, and blocked
+paths (unmounted volume, no permission, file where a directory belongs) are
+reported in the terminal with the reason — creation stops before the project
+directory is written. <code>data-path.json</code> is machine-specific; decide whether to
+add it to <code>.gitignore</code>. For an already-created project, inspection and later
+reconfiguration remain available through the installed <code>project-data</code> command
+(<code>project-data --help</code>).</p>
 <h2 id="agent-context-and-handoff">Agent context and handoff</h2>
 <p>Each new conversation acquires a fresh lock and reads the current context.
 Continuing sessions check a fingerprint and reuse context only when unchanged.

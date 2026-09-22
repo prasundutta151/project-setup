@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-setup"
-version = "1.3.0"
+version = "1.5.0"
 description = "Portable macOS/Linux project scaffolding and release CLI"
 requires-python = ">=3.9"
 
@@ -13,6 +13,7 @@ project-lisence = "project_setup.licensing:main"
 git-setup = "project_setup.gitsetup:main"
 project-setup = "project_setup.cli:setup_main"
 project-update = "project_setup.cli:update_main"
+project-data = "project_setup.data:main"
 
 [tool.setuptools]
 packages = ["project_setup"]

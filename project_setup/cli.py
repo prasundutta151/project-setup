@@ -23,6 +23,10 @@ DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 't
 class Error(Exception):
     pass
 
+class DataError(Error):
+    """Data-workspace failure raised after the project scaffold already exists."""
+    pass
+
 def git(root, *args, check=True):
     p = subprocess.run(['git', '-C', str(root), *args], text=True, capture_output=True)
     if check and p.returncode:
@@ -265,6 +269,276 @@ def read_description(value: str | None) -> str | None:
     return value.strip()
 
 
+DEFAULT_DATA_ROOT = '/Volumes/Work/Data'
+DATA_FILE_SUFFIXES = ('.txt', '.lst', '.list', '.json')
+
+
+def data_module():
+    """Import the bundled data-workspace module lazily; standalone updaters never import it."""
+    from . import data
+    return data
+
+
+def absolute(value) -> Path:
+    return Path(os.path.abspath(os.path.expanduser(str(value))))
+
+
+def data_dir_args(values):
+    """Resolve --data-dir values to (destination, subfolders, tree_file, label).
+
+    One existing file selects a directory-list file (ASCII lines or a JSON
+    preset); one absolute or ~ path is the data root, where the project
+    directory is created; every other value is a relative directory entry.
+    With no values the default root /Volumes/Work/Data is used.
+    """
+    if not values:
+        return None, None, None, 'default root ' + DEFAULT_DATA_ROOT
+    files, roots, entries = [], [], []
+    for value in values:
+        path = Path(value).expanduser()
+        try:
+            is_link, is_file = path.is_symlink(), path.is_file()
+        except OSError:
+            # Unreadable parents (for example /root) are classified by their name.
+            is_link, is_file = False, False
+        if is_link:
+            raise Error('Refusing a symbolic-link --data-dir path: ' + str(path))
+        if is_file:
+            files.append(value)
+        elif value.startswith(('/', '~')):
+            roots.append(value)
+        else:
+            entries.append(value)
+        if path.suffix.lower() in DATA_FILE_SUFFIXES and not path.exists():
+            raise Error('--data-dir directory-list file not found: ' + str(absolute(value)))
+    if len(files) > 1:
+        raise Error('--data-dir accepts at most one directory-list file.')
+    if len(roots) > 1:
+        raise Error('--data-dir accepts at most one absolute data root.')
+    if files and entries:
+        raise Error('--data-dir: directory entries cannot be combined with a directory-list file; list them inside the file.')
+    for entry in entries:
+        try:
+            data_module().valid_tree_path(entry)
+        except (ValueError, argparse.ArgumentTypeError) as exc:
+            raise Error(str(exc))
+    destination = absolute(roots[0]) if roots else None
+    tree = absolute(files[0]) if files else None
+    if tree:
+        label = 'directory-list file ' + str(tree)
+        if destination:
+            label += ' under data root ' + str(destination)
+    elif destination:
+        label = 'data root ' + str(destination)
+        if entries:
+            label += ' with directory entries'
+    elif entries:
+        label = 'directory entries under default root ' + DEFAULT_DATA_ROOT
+    else:
+        label = 'default root ' + DEFAULT_DATA_ROOT
+    return destination, (entries or None), tree, label
+
+
+def path_state(path) -> str:
+    """Return 'exists' or 'will create'; raise Error when the path is blocked."""
+    path = absolute(path)
+    parts = path.parts
+    if len(parts) >= 3 and parts[1] == 'Volumes':
+        volume = Path(parts[0], parts[1], parts[2])
+        if not os.path.ismount(volume):
+            raise Error(f'Volume is not mounted: {volume}. Mount it or choose another root with a single --data-dir PATH.')
+    if path.exists():
+        if not path.is_dir():
+            raise Error(str(path) + ' exists and is not a directory.')
+        return 'exists'
+    try:
+        if path.is_symlink():
+            raise Error(str(path) + ' is a broken symbolic link.')
+    except OSError as exc:
+        raise Error('Permission denied: cannot inspect ' + str(path) + ' (' + str(exc) + ').')
+    ancestor = path.parent
+    while not ancestor.exists() and ancestor != ancestor.parent:
+        ancestor = ancestor.parent
+    if not ancestor.exists():
+        raise Error('No existing parent directory for ' + str(path) + '.')
+    if not ancestor.is_dir():
+        raise Error(str(ancestor) + ' exists and is not a directory.')
+    if not os.access(ancestor, os.W_OK | os.X_OK):
+        raise Error('Permission denied: cannot create ' + str(path) + ' (no write permission at ' + str(ancestor) + ').')
+    return 'will create'
+
+
+def json_state(path) -> str:
+    """State of the configuration JSON file target: exists, will create or Error."""
+    path = absolute(path)
+    if path.is_symlink():
+        raise Error('Refusing a symbolic-link configuration: ' + str(path))
+    if path.exists() and not path.is_file():
+        raise Error(str(path) + ' exists and is not a file.')
+    if path.exists():
+        return 'exists'
+    return path_state(path)
+
+
+def report_check(path, state: str, label: str) -> None:
+    print('Check: ' + str(path) + ' [' + state + '] (' + label + ')')
+
+
+def dry_check(path, label: str) -> None:
+    try:
+        state = path_state(path)
+    except Error as exc:
+        print('Check: ' + str(path) + ' [BLOCKED: ' + str(exc) + '] (' + label + ')')
+    else:
+        report_check(path, state, label)
+
+
+def data_plan(args, project: Path):
+    """Pre-flight data validation; returns the workspace plan or None when not requested."""
+    json_value = args.json if isinstance(args.json, str) and args.json else None
+    if args.data_dir is None and json_value is None:
+        return None
+    dm = data_module()
+    destination, subfolders, tree_file, source = data_dir_args(args.data_dir or [])
+    json_path = absolute(json_value) if json_value else None
+    if json_path is not None:
+        target = dm.config_file(project, json_path)
+        resolved = project.resolve()
+        if resolved != target.parent and resolved not in target.parent.parents:
+            raise Error('--json must name a file or directory inside the project: ' + str(target))
+    try:
+        config = dm.setup(project, destination, subfolders, tree_file, json_path, dry_run=True)
+    except (ValueError, argparse.ArgumentTypeError) as exc:
+        message = str(exc)
+        if 'pass --destination' in message:
+            message = message.replace('pass --destination.', 'choose another root with a single --data-dir PATH.')
+        raise Error(message)
+    except OSError as exc:
+        raise Error(str(exc))
+    return {'source': source, 'destination': destination, 'subfolders': subfolders,
+            'tree_file': tree_file, 'json_path': json_path, 'config': config}
+
+
+def materialize_data(project: Path, plan) -> None:
+    """Create the data workspace and write its configuration after the scaffold exists."""
+    dm = data_module()
+    try:
+        target = dm.config_file(project, plan['json_path'])
+        # The configuration may name a nested file; its directory lives inside the project.
+        target.parent.mkdir(parents=True, exist_ok=True)
+        config = dm.setup(project, plan['destination'], plan['subfolders'], plan['tree_file'],
+                          plan['json_path'], dry_run=False)
+    except (OSError, ValueError, argparse.ArgumentTypeError) as exc:
+        raise DataError('Data workspace could not be created: ' + str(exc) +
+                        ' Project files remain at ' + str(project) + '.')
+    print('Data workspace ready')
+    print('Data root: ' + config['data_root'])
+    print('Data: ' + config['data_path'])
+    print('Subfolders: ' + ', '.join(config['subfolders']))
+    print('Configuration: ' + str(dm.config_file(project, plan['json_path'])))
+
+
+def print_config_path(args) -> None:
+    """Give the path of the data configuration JSON file without changing anything."""
+    dm = data_module()
+    project = Path(args.proj_dir).expanduser().resolve() / args.project if args.project else Path.cwd()
+    if not project.is_dir():
+        raise Error('Project directory does not exist: ' + str(project))
+    json_value = args.json if isinstance(args.json, str) and args.json else None
+    config = dm.config_file(project, absolute(json_value) if json_value else None)
+    note = '' if config.is_file() else ' (not created; add --data-dir to create the workspace)'
+    print('Configuration: ' + str(config) + note)
+
+
+def show_setup(args) -> None:
+    """Read-only report of setup directories, data workspace and configuration paths."""
+    dm = data_module()
+    project = Path(args.proj_dir).expanduser().resolve() / args.project if args.project else Path.cwd()
+    if not project.is_dir():
+        raise Error('Project directory does not exist: ' + str(project))
+    print('Project: ' + str(project))
+    version = version_path(project)
+    print('Version: ' + (version.read_text().splitlines()[0] if version.is_file() else '(none)'))
+    print('Setup directories:')
+    for name in DIRS:
+        print('  ' + name + ': ' + ('present' if (project / name).is_dir() else 'missing'))
+    json_folder = project / 'json'
+    print('JSON folder: ' + str(json_folder) + ('' if json_folder.is_dir() else ' (missing)'))
+    json_value = args.json if isinstance(args.json, str) and args.json else None
+    json_path = absolute(json_value) if json_value else None
+    try:
+        config = dm.read_config(project, json_path)
+        config_file = dm.config_file(project, json_path, for_show=True)
+    except ValueError as exc:
+        raise Error(str(exc))
+    if config:
+        data_path = Path(config['data_path'])
+        print('Data workspace:')
+        print('  Root: ' + config['data_root'])
+        print('  Data: ' + str(data_path) + (' [exists]' if data_path.is_dir() else ' [missing]'))
+        print('  Subfolders: ' + ', '.join(config['subfolders']))
+    else:
+        print('Data workspace: not configured (create one with --data-dir).')
+    print('Configuration: ' + str(config_file) + ('' if config_file.is_file() else ' (not created)'))
+
+
+def dry_run_setup(args) -> None:
+    """Preview the project and data directories a creation would make; writes nothing."""
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project or ''):
+        raise Error('PROJECT must be a single directory name starting with a letter or digit.')
+    args.description = read_description(args.proj_description if args.proj_description is not None else args.objective)
+    parent = Path(args.proj_dir).expanduser().resolve()
+    root = parent / args.project
+    print('Dry run: no files or directories will be created.')
+    print('')
+    print('Project: ' + str(root))
+    dry_check(parent, 'parent directory')
+    if root.exists() or root.is_symlink():
+        print('Check: ' + str(root) + ' [BLOCKED: destination exists; project-setup never overwrites] (project directory)')
+    else:
+        dry_check(root, 'project directory')
+    print('Setup directories: ' + ', '.join(DIRS) + ' (inside the project)')
+    git_line = 'Git: initialize, stage and commit the scaffold'
+    if args.remote:
+        git_line += '; configure remote ' + args.remote
+    elif args.create_remote:
+        git_line += '; create a private GitHub repository'
+    if args.git_push:
+        git_line += '; push the initial commit'
+    print(git_line)
+    print('Description file: PROJECT_DESCRIPTION.txt')
+    print('')
+    blocked = None
+    try:
+        plan = data_plan(args, root)
+    except Error as exc:
+        blocked, plan = str(exc), None
+    if plan:
+        config = plan['config']
+        print('Data workspace: ' + plan['source'])
+        dry_check(absolute(config['data_root']), 'data root')
+        data_path = absolute(config['data_path'])
+        dry_check(data_path, 'project data directory')
+        for folder in config['subfolders']:
+            dry_check(data_path / folder, 'subfolder')
+        try:
+            target = data_module().config_file(root, plan['json_path'])
+            state = json_state(target)
+        except Error as exc:
+            print('Check: configuration JSON [BLOCKED: ' + str(exc) + ']')
+        else:
+            report_check(target, state, 'configuration JSON')
+    elif blocked:
+        print('Data workspace: BLOCKED: ' + blocked)
+    else:
+        print('Data workspace: not requested (add --data-dir; default root ' + DEFAULT_DATA_ROOT + ')')
+        if args.json == '':
+            config_file = data_module().config_file(root, None)
+            print('Configuration: ' + str(config_file) + ' (not created; add --data-dir to create the workspace)')
+    print('')
+    print('Dry run complete: nothing was created.')
+
+
 def clone_project(args):
     name = args.from_git
     # An explicit remote permits any Git host/local URL while retaining a simple name.
@@ -306,10 +580,23 @@ def scaffold(args):
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', args.project):
         raise Error('PROJECT must be a single directory name starting with a letter or digit.')
     parent = Path(args.proj_dir).expanduser().resolve()
+    report_check(parent, path_state(parent), 'parent directory')
     parent.mkdir(parents=True, exist_ok=True)
     if git(parent, 'rev-parse', '--show-toplevel', check=False):
         raise Error('Choose a destination outside an existing Git repository.')
     root = parent / args.project
+    if root.exists() or root.is_symlink():
+        raise Error('Destination already exists: ' + str(root) + '; project-setup never overwrites.')
+    report_check(root, path_state(root), 'project directory')
+    # Validate the data workspace before creating anything: unmounted volumes and
+    # missing permissions are reported here, while the project still does not exist.
+    plan = data_plan(args, root)
+    if plan:
+        config = plan['config']
+        report_check(absolute(config['data_root']), path_state(config['data_root']), 'data root')
+        report_check(absolute(config['data_path']), path_state(config['data_path']), 'project data directory')
+        target = data_module().config_file(root, plan['json_path'])
+        report_check(target, json_state(target), 'configuration JSON')
     root.mkdir()  # exclusive, never overwrite
     try:
         git(root, 'init', '-b', 'main')  # first operation before scaffold copying
@@ -336,8 +623,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.3.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.3.0'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.5.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.5.0'], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -355,15 +642,20 @@ def scaffold(args):
     except (Error, OSError):
         setup_guidance(root, args.remote)
         raise
+    # Outside the guidance block: a data failure must not print Git recovery steps.
+    if plan:
+        materialize_data(root, plan)
     print(f'Created: {root}')
     print(f'Next: ask your agent to read {root / "startup-prompt.txt"} and follow it.')
     if not git(root, 'remote', 'get-url', 'origin', check=False):
         print('No remote configured. Follow these steps:')
         print((root / 'docs/GIT_SETUP.txt').read_text())
+    if args.json == '' and not plan:
+        print_config_path(args)
 
 
 def startup_guide():
-    print("""project-setup 1.3.0 — agent-aware projects for macOS and Linux
+    print("""project-setup 1.5.0 — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -375,6 +667,7 @@ def startup_guide():
 6. For remote setup: git-setup guide (or project-setup --git-setup guide).
 7. For versions/releases: /absolute/project/path/script/project-update --help.
 8. User manuals are generated only on an explicit external project-document request.
+9. Data workspace: add --data-dir [FILE|PATH|name ...]; preview with --dry-run, inspect with --show.
 No service or background agent is started. Python 3.9+ and Git 2.28+ are required.
 """)
 
@@ -395,6 +688,14 @@ def setup_main():
     p.add_argument('--remote', help='Git remote URL to configure as origin')
     p.add_argument('--create-remote', action='store_true', help='Create a private GitHub repository if missing; defaults to authenticated account/PROJECT')
     p.add_argument('--git-push', action='store_true', help='Ensure remote exists, commit and push the new project')
+    p.add_argument('--data-dir', nargs='*', metavar='PATH_OR_NAME',
+                   help='Plan an external data workspace: no value uses the default root /Volumes/Work/Data; a single FILE lists directories (one line each or a JSON preset); one absolute PATH is the data root and the project directory is created inside it; other values are directory entries (use / for nesting). One root may be combined with one FILE or entries.')
+    p.add_argument('--dry-run', action='store_true',
+                   help='Preview everything project-setup would create (project, setup directories, data workspace and configuration paths) without writing anything; every path is reported as exists, will create or BLOCKED with the reason.')
+    p.add_argument('--show', action='store_true',
+                   help="Show an existing project's setup: version, setup directories, data workspace, JSON folder path and configuration path; makes no changes.")
+    p.add_argument('--json', nargs='?', const='', metavar='PATH', default=None,
+                   help='Path to the data configuration JSON file (or a directory containing data-path.json), inside the project; implies data workspace creation. Without a value, print the configuration file path.')
     args = p.parse_args()
     if args.git_setup is not None:
         from .gitsetup import main
@@ -413,15 +714,49 @@ def setup_main():
         p.error('--ai-command requires an explicit non-manual --ai selection.')
     if args.from_git and (args.create_remote or args.git_push):
         p.error('--from-git cannot create remotes or push during cloning.')
-    if not args.project and not args.from_git and not args.refresh:
+    json_value = args.json if isinstance(args.json, str) and args.json else None
+    json_print = args.json == ''
+    create_data = args.data_dir is not None or json_value is not None
+    if args.show and args.dry_run:
+        p.error('--show reports an existing project and --dry-run previews creation; use one.')
+    if args.show and (args.from_git or args.refresh or args.remote or args.create_remote or args.git_push
+                      or args.proj_description is not None or args.objective is not None or args.data_dir is not None):
+        p.error('--show is read-only; run it alone against an existing project.')
+    if args.dry_run and (args.from_git or args.refresh):
+        p.error('--dry-run previews --project creation; cloning and refresh are not previewed.')
+    if create_data and (args.from_git or args.refresh):
+        p.error('--data-dir workspace creation requires --project mode; configure data after cloning or refreshing.')
+    if args.dry_run and not args.project:
+        p.error('--dry-run previews creation; supply --project NAME.')
+    if not args.project and not args.from_git and not args.refresh and not (args.show or args.dry_run or json_print):
         p.error('--project or --from-git is required; run without arguments for the guide')
+    if args.show:
+        run(lambda: show_setup(args))
+        return
+    if args.dry_run:
+        run(lambda: dry_run_setup(args))
+        return
+    creation_intent = (args.proj_description is not None or args.objective is not None or args.remote
+                       or args.create_remote or args.git_push or create_data)
+    if json_print and args.project and not args.refresh and not args.from_git and not creation_intent \
+            and (Path(args.proj_dir).expanduser().resolve() / args.project).is_dir():
+        # --json alone on an existing project reports the configuration path.
+        run(lambda: print_config_path(args))
+        return
+    if json_print and not args.project and not args.from_git and not args.refresh:
+        run(lambda: print_config_path(args))
+        return
     def create():
         args.description = read_description(args.proj_description if args.proj_description is not None else args.objective)
         if args.refresh:
             from .refresh import refresh_project
             refresh_project(args)
+            if json_print:
+                print_config_path(args)
         elif args.from_git:
             clone_project(args)
+            if json_print:
+                print_config_path(args)
         else:
             scaffold(args)
     run(create)

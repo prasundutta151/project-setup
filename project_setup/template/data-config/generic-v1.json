@@ -1,0 +1,6 @@
+{
+  "name": "generic-v1",
+  "version": 1,
+  "description": "Portable default data workspace",
+  "subfolders": ["raw", "processed", "outputs", "cache"]
+}

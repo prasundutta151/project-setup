@@ -48,7 +48,7 @@ def refresh_project(args) -> None:
     command = args.ai_command or os.environ.get('PROJECT_SETUP_AI_COMMAND_' + selected.upper()) or os.environ.get('PROJECT_SETUP_AI_COMMAND')
     if selected == 'manual': command = None
     metadata = {'project': str(root), 'template': str(template), 'initial_commit': head,
-                'git_repository': is_repo, 'template_version': '1.3.0',
+                'git_repository': is_repo, 'template_version': '1.5.0',
                 'description_override': args.description, 'selected_ai': selected}
     (packet/'request.json').write_text(json.dumps(metadata, indent=2)+'\n')
     prompt = packet/'refresh-prompt.txt'
@@ -139,7 +139,7 @@ fails. Release your lock only if you acquired it yourself, not a launcher sessio
         raise Error('--ai-command must include {prompt_file}; tokens may also use {project_dir}. No shell is invoked.')
     argv = [part.replace('{prompt_file}', str(prompt)).replace('{project_dir}', str(root)) for part in argv]
     origin = git(root, 'remote', '-v')
-    manage_lock(root, 'acquire', None, 'project-setup-refresh', '1.3.0')
+    manage_lock(root, 'acquire', None, 'project-setup-refresh', '1.5.0')
     owner_path = root/'.agent-state/lock/owner.json'
     owner = json.loads(owner_path.read_text())
     env = dict(os.environ, PROJECT_SETUP_REFRESH_SESSION=owner['session_id'],

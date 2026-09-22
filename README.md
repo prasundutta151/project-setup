@@ -1,4 +1,4 @@
-# project-setup 1.3.0
+# project-setup 1.5.0
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
 `project-setup` without arguments for step-by-step instructions. The software
@@ -13,20 +13,21 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.3.0
+git checkout v1.5.0
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
 ```
 
 Add that PATH line to your shell profile if needed. The installer does not edit
-shell configuration or require sudo. It installs three managed commands under
-`~/.local/bin`: project-setup, project-update and git-setup; package and template
-files go under `~/.local/lib/project-setup/`. `--prefix /path` selects another
-prefix. Unrelated commands are refused. Re-run the installer to upgrade.
-Alternatively use `python3 -m pip install .` in a virtual environment.
-Uninstall by removing these three managed launchers, the installed
-`lib/project-setup` directory and `share/project-setup` guide directory.
+shell configuration or require sudo. It installs five managed commands under
+`~/.local/bin`: project-setup, project-update, git-setup, project-lisence and
+project-data; package and template files go under `~/.local/lib/project-setup/`.
+`--prefix /path` selects another prefix. `--without-project-data` or
+`--project-data-only` limit the installed set. Unrelated commands are refused.
+Re-run the installer to upgrade. Alternatively use `python3 -m pip install .`
+in a virtual environment. Uninstall by removing these managed launchers, the
+installed `lib/project-setup` directory and `share/project-setup` guide directory.
 
 ## Create a project
 
@@ -75,6 +76,62 @@ No local Model_Project or GDP checkout is required: the portable template and
 GDP-derived documentation contract are bundled. Creation does not implement a
 scientific algorithm, install scientific commands or generate scientific plots.
 Those tasks belong to the project's subsequent development.
+
+## Data workspace
+
+`--data-dir` plans an external data workspace while creating a project, so code
+stays in the project and data lives on another drive. The project's data
+directory (`<root>/<project>`) is created inside the chosen root:
+
+```sh
+project-setup --project SKA --proj-dir ~/Documents --data-dir   # default root /Volumes/Work/Data
+project-setup --project SKA --data-dir /mnt/work/Data           # one absolute PATH is the data root
+project-setup --project SKA --data-dir raw calibrated images/plots   # directory entries; / nests
+project-setup --project SKA --data-dir ~/lists/ska-dirs.txt     # ASCII file: one directory per line
+project-setup --project SKA --data-dir /mnt/work/Data ~/lists/gdp.txt  # root and file together
+```
+
+Resolution rules for `--data-dir` values: no value uses the default root
+`/Volumes/Work/Data` with the default tree `raw processed outputs cache`; one
+existing file is a directory-list file (one relative directory per line, `#`
+comments ignored; a JSON preset with a `subfolders` list also works, see the
+bundled `data-config` presets); one absolute or `~` path is the data root where
+the project directory is created; every other value is a relative directory
+entry, and `/` describes nesting. At most one root and one file may be given,
+and entries cannot be combined with a file. A missing `--data-dir` file with a
+`.txt`/`.lst`/`.list`/`.json` suffix is reported instead of becoming a folder.
+The default root must be mounted; an unmounted `/Volumes/<drive>` is refused
+rather than silently creating a substitute on the internal disk. The workspace
+and its subfolders are recorded in `<project>/data-path.json`.
+
+Companion options:
+
+```sh
+project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data --dry-run
+project-setup --project SKA --proj-dir ~/Documents --show
+project-setup --project SKA --proj-dir ~/Documents --json
+project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data \
+  --json ~/Documents/SKA/data-path.json
+```
+
+- `--dry-run` previews everything a run would create — project directory, setup
+  directories, Git steps, data root, data path, every subfolder and the
+  configuration file — and writes nothing.
+- `--show` reports an existing project without changing it: version, setup
+  directories, the data workspace (root, data path, subfolders), the `json/`
+  folder path and the configuration file path.
+- `--json [PATH]` selects the configuration JSON file (a file or directory
+  inside the project) and implies workspace creation; without a value it prints
+  the configuration file path.
+
+Every requested path is checked before anything is created: existing paths are
+reported as `exists`, missing paths are created when permitted, and blocked
+paths (unmounted volume, no permission, file where a directory belongs) are
+reported in the terminal with the reason — creation stops before the project
+directory is written. `data-path.json` is machine-specific; decide whether to
+add it to `.gitignore`. For an already-created project, inspection and later
+reconfiguration remain available through the installed `project-data` command
+(`project-data --help`).
 
 ## Agent context and handoff
 

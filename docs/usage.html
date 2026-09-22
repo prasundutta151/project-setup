@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-130-step-by-step-guide">project-setup 1.3.0 — step-by-step guide</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-150-step-by-step-guide">project-setup 1.5.0 — step-by-step guide</h1>
 <h2 id="1-install-and-discover-commands">1. Install and discover commands</h2>
 <p>Download the release archive, extract it, and run <code>python3 install.py</code>.
 Add <code>~/.local/bin</code> to PATH if necessary. Requires Python 3.9+ and Git 2.28+.</p>
@@ -65,7 +65,29 @@ ChatGPT, Claude, OpenCode or Manual. Manual (the noninteractive default) prints
 a migration prompt for your agent. Automatic execution needs an explicitly
 configured agent command and clean Git baseline. See refresh.md/refresh.html.
 Review the resulting developer/REFRESH_REPORT.md and changes before committing.
-No license change or automatic migration of every repository is performed.</p><!-- project-lisence footer begin -->
+No license change or automatic migration of every repository is performed.</p>
+<h2 id="9-plan-a-data-workspace">9. Plan a data workspace</h2>
+<pre><code class="language-sh">project-setup --project SKA --proj-dir ~/Documents --data-dir --dry-run
+project-setup --project SKA --proj-dir ~/Documents --data-dir /mnt/work/Data raw calibrated
+project-setup --project SKA --proj-dir ~/Documents --data-dir ~/lists/ska-dirs.txt
+project-setup --project SKA --proj-dir ~/Documents --show
+project-setup --project SKA --proj-dir ~/Documents --json
+</code></pre>
+<p><code>--data-dir</code> accepts no value (default root <code>/Volumes/Work/Data</code>), one
+directory-list file (one relative directory per line, or a JSON preset with a
+<code>subfolders</code> list), one absolute data root where the project directory is
+created, or directory entries that use <code>/</code> for nesting; one root may be
+combined with one file or entries. <code>--dry-run</code> previews every path a run would
+create — project, setup directories, Git steps, data root, data path,
+subfolders and the configuration file — and writes nothing. <code>--show</code> reports an
+existing project's version, setup directories, data workspace, <code>json/</code> folder
+path and configuration path. <code>--json [PATH]</code> selects the data configuration
+file inside the project (implying workspace creation) or, without a value,
+prints the configuration file path. All paths are checked first: existing
+paths report <code>exists</code>, missing paths are created when permitted, and blocked
+volumes or permission failures are reported in the terminal before the project
+is created. The workspace is recorded in <code>&lt;project&gt;/data-path.json</code>. See README
+for the full rules and <code>project-data --help</code> for later reconfiguration.</p><!-- project-lisence footer begin -->
 <footer aria-label="Licensing"><p>Copyright / licensing contact: Prasun Dutta · Department of Physics, IIT (BHU), Varanasi, Varanasi 221005 · pdutta.phy@itbhu.ac.in. <a href="../lisence/LICENSE.html">Custom source-available licensing draft</a> — pending author approval.</p></footer>
 <!-- project-lisence footer end -->
 </body></html>

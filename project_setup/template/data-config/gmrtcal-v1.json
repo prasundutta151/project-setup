@@ -1,0 +1,9 @@
+{
+  "name": "gmrtcal-v1",
+  "version": 1,
+  "description": "GMRTCAL-style calibration and plotting workspace",
+  "subfolders": [
+    "raw", "calibrators", "measurement-sets", "calibrated",
+    "tables", "pipelines", "plots", "sample_plots", "logs", "cache"
+  ]
+}

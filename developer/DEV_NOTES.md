@@ -1,3 +1,21 @@
+## 2026-09-22 08:59:19 IST
+
+Prompt / Request
+- Integrate the setup-data functionality into project-setup as --data-dir (ASCII directory-list file, a list of directories and subdirectories, or the default /Volumes/Work/Data root with the project directory created inside), plus --dry-run, --show and --json; check every requested path for existence/creatability and report permission or mount failures in the terminal; make the corresponding documentation, bump the middle version, push to Git and install locally.
+
+Changes Made
+- Added data-workspace planning to project-setup: mode resolution in data_dir_args, path probes (exists / will create / BLOCKED with the reason), pre-flight validation before any project file is written, materialization after the initial Git checkpoint with DataError kept separate from Git setup guidance, and a lazy data-module import so embedded standalone updaters keep working.
+- Added --dry-run (full creation preview, writes nothing), --show (existing project: version, setup directories, data workspace, json/ folder path and configuration path) and --json [PATH] (configuration file selection inside the project; prints the path without a value).
+- Fixed two pre-existing project_setup/data.py bugs found by the new tests: subfolder precedence on first setup discarded explicit entries/tree in favour of the defaults, and valid_subfolder rejected nested tree entries; relaxed the configuration write check to any path inside the project to match its own error text.
+- New regression tests in testdirectory/test_data_dir.py (modes, path checks, permission and unmounted-volume blocks, dry-run/show/json behaviour, updater import isolation). README and docs/usage.md data-workspace sections; regenerated standalone/template updaters and offline HTML/TXT guides; version 1.5.0 (middle bump).
+
+Verification
+- PASS: 75 tests via python3 -m unittest discover -s testdirectory (46 existing plus 29 new data-directory tests).
+- Smoke: dry-run preview reports the blocked default volume without writing; entries/root/file workspace creation, --show and --json outputs verified; permission-denied pre-flight stops before project creation; reinstalled commands exercised after install.py.
+
+Notes
+- External project-document is not installed; documentation was explicitly requested and rebuilt with the repository's own developer/script/build_docs.py under docs/DOCUMENTATION_RULES.md. data-path.json stays machine-specific; .gitignore was not edited. Committed as "Data directory setup implementation".
+
 ## 2026-09-21 08:43:44 IST
 
 Prompt / Request

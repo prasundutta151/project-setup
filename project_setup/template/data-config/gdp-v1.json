@@ -1,0 +1,14 @@
+{
+  "name": "gdp-v1",
+  "version": 1,
+  "description": "GDP-style run directory based on GDP/rundir/data-product and plots",
+  "subfolders": [
+    "data-product", "data-product/cross-corr", "data-product/cross-corr/csv",
+    "data-product/cross-corr/npz", "data-product/flag", "data-product/flag/csv",
+    "data-product/flag/npz", "data-product/gains", "data-product/gains/csv",
+    "data-product/gains/npz", "data-product/ks", "data-product/ks/csv",
+    "data-product/ks/npz", "data-product/self-corr", "data-product/self-corr/npz",
+    "data-product/stats", "data-product/stats/csv", "data-product/stats/npz",
+    "logs", "plots", "plots/eps", "plots/png", "pipelines"
+  ]
+}
