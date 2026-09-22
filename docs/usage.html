@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-150-step-by-step-guide">project-setup 1.5.0 — step-by-step guide</h1>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>project-setup step-by-step guide</title><style>body{max-width:1000px;margin:40px auto;padding:0 20px;font:16px/1.6 system-ui}pre{background:#edf2f4;padding:16px;overflow:auto}a{color:#075e69}</style></head><body><nav><a href="index.html">Main documentation</a></nav><h1 id="project-setup-160-step-by-step-guide">project-setup 1.6.0 — step-by-step guide</h1>
 <h2 id="1-install-and-discover-commands">1. Install and discover commands</h2>
 <p>Download the release archive, extract it, and run <code>python3 install.py</code>.
 Add <code>~/.local/bin</code> to PATH if necessary. Requires Python 3.9+ and Git 2.28+.</p>
@@ -7,6 +7,9 @@ project-setup --help
 project-setup --git-setup guide
 project-update --help
 </code></pre>
+<p>The bare command prints a getting-started overview: how to start a new project
+or refresh an old one first, then every other functionality, ending with the
+local documentation HTML path for reading more in a browser.</p>
 <h2 id="2-create-a-project-or-clone-existing-work">2. Create a project or clone existing work</h2>
 <pre><code class="language-sh">project-setup --project MyProject --proj-dir ~/Projects --proj-description &quot;Analyze stellar spectra&quot;
 project-setup --project MyProject --proj-dir ~/Projects --proj-description /path/description.txt

@@ -1,4 +1,4 @@
-# project-setup 1.5.0 — step-by-step guide
+# project-setup 1.6.0 — step-by-step guide
 
 ## 1. Install and discover commands
 
@@ -11,6 +11,10 @@ project-setup --help
 project-setup --git-setup guide
 project-update --help
 ```
+
+The bare command prints a getting-started overview: how to start a new project
+or refresh an old one first, then every other functionality, ending with the
+local documentation HTML path for reading more in a browser.
 
 ## 2. Create a project or clone existing work
 

@@ -1,7 +1,8 @@
-# project-setup 1.5.0
+# project-setup 1.6.0
 
 Create agent-aware astronomy software projects on macOS and Linux. Run
-`project-setup` without arguments for step-by-step instructions. The software
+`project-setup` without arguments for a getting-started overview that lists
+every functionality and points to the offline documentation HTML. The software
 creates files and local Git history; it does not run an AI model or start a service.
 Requires Python 3.9+ and Git 2.28+. Runtime uses Python's standard library.
 
@@ -13,7 +14,7 @@ Download and extract the versioned archive from
 ```sh
 git clone https://github.com/prasundutta151/project-setup.git
 cd project-setup
-git checkout v1.5.0
+git checkout v1.6.0
 python3 install.py
 export PATH="$HOME/.local/bin:$PATH"
 project-setup
@@ -37,7 +38,10 @@ project-setup --project StarAnalysis --proj-dir ~/Projects \
   --objective "Analyze stellar FITS images"
 ```
 
-The first command prints the numbered guide; the second creates a project.
+The first command prints the getting-started overview (new project, refreshing
+an old project, every other functionality and the documentation HTML path);
+`project-setup --guide` prints the numbered agent setup steps instead. The second
+command creates a project.
 Use your actual name and scientific objective. `--proj-dir` defaults to the
 current directory. Missing parents are created; existing destinations and nested
 Git repositories are refused. Git initializes immediately, before copying the

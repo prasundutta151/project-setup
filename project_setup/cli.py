@@ -16,6 +16,10 @@ import sys
 import tarfile
 import tempfile
 
+# Also copied verbatim into every project's script/project-update, so no
+# package-relative imports may appear at module level here.
+VERSION = '1.6.0'
+
 VERSION_RE = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]?)\.(0|[1-9][0-9]?)\Z')
 DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 'tests', 'data', 'lisence')
 
@@ -623,8 +627,8 @@ def scaffold(args):
         stamp = datetime.now().astimezone().isoformat()
         notes = root / 'developer/DEV_NOTES.md'
         with notes.open('a') as f:
-            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup 1.5.0; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
-        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', '1.5.0'], capture_output=True, text=True, check=True)
+            f.write(f'\n## {stamp}\n\nAgent / Environment\n- project-setup {VERSION}; computer {socket.gethostname()}; model not applicable.\n\nPrompt / Request\n- CLI scaffold request for {args.project}.\n\nObjective\n- {objective}\n\nChanges Made\n- Created agent-aware scaffold and standalone updater; initialized Git before copying files.\n\nVerification\n- Scaffold files written; application tests not run (no application yet).\n\nNotes\n- Initial creation; remote setup depends on explicit options.\n')
+        lock_result = subprocess.run([sys.executable, str(root/'script/agent_lock.py'), 'acquire', '--agent', 'project-setup', '--agent-version', VERSION], capture_output=True, text=True, check=True)
         session = json.loads(lock_result.stdout)['session_id']
         try:
             subprocess.run([sys.executable, str(root/'script/agent_context.py'), 'stamp', '--session', session], capture_output=True, text=True, check=True)
@@ -654,8 +658,49 @@ def scaffold(args):
         print_config_path(args)
 
 
+def documentation_page() -> str:
+    """Local offline documentation HTML (repository checkout or installed prefix)."""
+    here = Path(__file__).resolve()
+    for candidate in (here.parents[1] / 'docs' / 'index.html',
+                      here.parents[3] / 'share/project-setup/docs/index.html'):
+        if candidate.is_file():
+            return str(candidate)
+    return 'https://github.com/prasundutta151/project-setup/blob/main/docs/index.html'
+
+
+def usage_overview():
+    print(f"""project-setup {VERSION} — agent-aware projects for macOS and Linux
+
+GET STARTED
+ 1. New project:
+    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
+ 2. Refresh an old project to this format (first copies it to NAME/NAME.org):
+    project-setup --refresh NAME --proj-dir ~/Projects
+ 3. Ask any coding agent: Read /absolute/project/path/startup-prompt.txt and follow it.
+    Numbered agent setup steps: project-setup --guide
+
+OTHER FUNCTIONALITIES
+ - Clone existing work:      project-setup --from-git OWNER/REPO --proj-dir ~/Projects
+ - Data workspace:           project-setup --project NAME --data-dir [FILE|PATH|name ...]
+ - Inspect before/after:     project-setup --dry-run (creation preview) |
+                             project-setup --show (existing project) |
+                             project-setup --json [PATH] (configuration file)
+ - Git and GitHub helpers:   git-setup guide | configure | new | clone | update
+                             (or project-setup --git-setup ...)
+ - Version, release, sync:   project-update --version [LEVEL] | --release |
+                             --git-pull | --git-push | --lock acquire|release|status
+ - Licensing drafts:         project-lisence --project NAME --proj-dir DIR \\
+                             --author "Name" --author-email you@example.org
+ - Private repo and push:    project-setup --project NAME --create-remote --git-push
+
+Full documentation: {documentation_page()}
+Open it in a browser for installation, Git setup, releases and refresh details.
+
+No service or background agent is started. Python 3.9+ and Git 2.28+ are required.""")
+
+
 def startup_guide():
-    print("""project-setup 1.5.0 — agent-aware projects for macOS and Linux
+    print(f"""project-setup {VERSION} — agent-aware projects for macOS and Linux
 1. Choose a project name, parent directory and astronomy objective.
 2. Create it (no existing files are overwritten):
    project-setup --project NAME --proj-dir ~/Projects --objective "Describe the task"
@@ -673,6 +718,9 @@ No service or background agent is started. Python 3.9+ and Git 2.28+ are require
 
 
 def setup_main():
+    if len(sys.argv) == 1:
+        usage_overview()
+        return
     p = argparse.ArgumentParser(description='Create a portable project with Git and release tooling. For Git helpers: project-setup --git-setup [guide|configure|new|clone|update].')
     p.add_argument('--git-setup', nargs=argparse.REMAINDER, metavar='COMMAND',
                    help='Git helpers: guide, configure, new, clone, update. Example: project-setup --git-setup guide; put helper arguments after this option.')
@@ -701,7 +749,7 @@ def setup_main():
         from .gitsetup import main
         main(args.git_setup)
         return
-    if args.guide or len(sys.argv) == 1:
+    if args.guide:
         startup_guide()
         return
     if args.proj_description is not None and args.objective is not None:
@@ -729,7 +777,7 @@ def setup_main():
     if args.dry_run and not args.project:
         p.error('--dry-run previews creation; supply --project NAME.')
     if not args.project and not args.from_git and not args.refresh and not (args.show or args.dry_run or json_print):
-        p.error('--project or --from-git is required; run without arguments for the guide')
+        p.error('--project or --from-git is required; run project-setup without arguments for the overview')
     if args.show:
         run(lambda: show_setup(args))
         return

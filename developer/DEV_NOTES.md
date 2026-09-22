@@ -1,3 +1,20 @@
+## 2026-09-22 09:41:12 IST
+
+Prompt / Request
+- Running project-setup with no argument must list all functionalities and direct to the documentation HTML for more: first how to get started with a new project or refresh an old project, then the other functionalities (license, update, everything). Update the documentation, do a minor version update and push to git.
+
+Changes Made
+- setup_main now prints a new usage_overview() when invoked bare: GET STARTED (create with --project, refresh an old project with --refresh including the NAME/NAME.org backup, hand startup-prompt.txt to an agent, --guide for the numbered steps) followed by OTHER FUNCTIONALITIES (clone, data workspace, --dry-run/--show/--json, git-setup, project-update version/release/sync/lock, project-lisence, --create-remote/--git-push), ending with the local offline documentation HTML path (repository docs/index.html or installed share/project-setup/docs/index.html, GitHub page as fallback).
+- --guide still prints the original numbered agent setup steps; the missing-action argparse message and the README/usage.md wording now describe the overview instead of the old bare-command guide.
+- Version 1.6.0 (middle/feature bump): root VERSION, pyproject.toml, README title and checkout tag, usage.md heading, build_docs.py header. cli.py and refresh.py now read one VERSION constant; cli.py deliberately keeps it as a plain module-level string because write_updater copies cli.py verbatim into every project's script/project-update and a package-relative import broke that standalone path (caught by the Integration updater tests). project_setup/__version__ also corrected from the stale 0.0.2.
+
+Verification
+- PASS: 83 tests via python3 -m unittest discover -s testdirectory (80 existing plus 3 new tests: bare-command content and section order, local documentation page resolution, --guide unchanged).
+- Reinstalled with install.py and smoked the installed bare project-setup from /tmp: overview printed with GET STARTED first and Full documentation pointing at ~/.local/share/project-setup/docs/index.html; offline guides rebuilt with developer/script/build_docs.py.
+
+Notes
+- Releases stopped being tagged after v1.3.0; no new tag created. Push follows this entry in the same session.
+
 ## 2026-09-22 09:24:53 IST
 
 Prompt / Request

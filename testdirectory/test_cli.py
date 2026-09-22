@@ -315,4 +315,37 @@ class Integration(unittest.TestCase):
         self.update('--git-push','--massage')
         self.assertRegex(self.git('log','-1','--format=%s'),r'^\d{2}:\d{2}:\d{2}\|\d{2}-\d{2}-\d{2}$')
 
+class NoArgumentOverview(unittest.TestCase):
+    def run_main(self, *extra):
+        return subprocess.run([sys.executable, '-c', 'from project_setup.cli import setup_main; setup_main()', *extra],
+                              capture_output=True, text=True)
+
+    def test_bare_command_lists_get_started_then_other_functionality(self):
+        result = self.run_main()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = result.stdout
+        self.assertIn('GET STARTED', out)
+        # Getting started (new project and refresh) comes before the rest.
+        self.assertLess(out.index('--project NAME'), out.index('OTHER FUNCTIONALITIES'))
+        self.assertLess(out.index('--refresh NAME'), out.index('OTHER FUNCTIONALITIES'))
+        self.assertIn('NAME/NAME.org', out)
+        for token in ('project-lisence', 'project-update', 'git-setup',
+                      '--from-git', '--data-dir', '--dry-run', '--show', '--json'):
+            self.assertIn(token, out)
+        self.assertIn('Full documentation:', out)
+        self.assertIn('index.html', out)
+        self.assertIn('1.6.0', out)
+
+    def test_documentation_page_is_the_local_repository_copy(self):
+        page = Path(cli.documentation_page())
+        self.assertTrue(page.is_file(), page)
+        self.assertEqual(page.name, 'index.html')
+
+    def test_guide_flag_still_prints_numbered_agent_steps(self):
+        result = self.run_main('--guide')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Choose a project name', result.stdout)
+        self.assertNotIn('OTHER FUNCTIONALITIES', result.stdout)
+
+
 if __name__ == '__main__': unittest.main()

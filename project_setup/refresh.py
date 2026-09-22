@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 
-from .cli import Error, git, manage_lock
+from .cli import Error, git, manage_lock, VERSION
 
 REQUIRED_DIRS = ('script', 'version', 'docs', 'pipeline', 'json', 'plot', 'developer', 'tests')
 REQUIRED_FILES = ('AGENTS.md', 'HANDOFF.md', 'PROJECT_DESCRIPTION.txt',
@@ -107,7 +107,7 @@ def refresh_project(args) -> None:
     command = args.ai_command or os.environ.get('PROJECT_SETUP_AI_COMMAND_' + selected.upper()) or os.environ.get('PROJECT_SETUP_AI_COMMAND')
     if selected == 'manual': command = None
     metadata = {'project': str(root), 'template': str(template), 'initial_commit': head,
-                'git_repository': is_repo, 'template_version': '1.5.0',
+                'git_repository': is_repo, 'template_version': VERSION,
                 'backup': str(root / (root.name + '.org')),
                 'description_override': args.description, 'selected_ai': selected}
     (packet/'request.json').write_text(json.dumps(metadata, indent=2)+'\n')
@@ -208,7 +208,7 @@ fails. Release your lock only if you acquired it yourself, not a launcher sessio
     argv = [part.replace('{prompt_file}', str(prompt)).replace('{project_dir}', str(root)) for part in argv]
     _make_backup(root)
     origin = git(root, 'remote', '-v')
-    manage_lock(root, 'acquire', None, 'project-setup-refresh', '1.5.0')
+    manage_lock(root, 'acquire', None, 'project-setup-refresh', VERSION)
     owner_path = root/'.agent-state/lock/owner.json'
     owner = json.loads(owner_path.read_text())
     env = dict(os.environ, PROJECT_SETUP_REFRESH_SESSION=owner['session_id'],

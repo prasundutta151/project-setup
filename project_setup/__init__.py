@@ -1,2 +1,2 @@
 """project-setup package."""
-__version__ = '0.0.2'
+__version__ = '1.6.0'
