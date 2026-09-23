@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>chisq_fit command reference (v0.0.2)</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<nav><a href="index.html">Index</a><a href="README.html">README</a><a href="test_project-step-by-step.html">Step-by-step</a><a href="chisq_fit.html">chisq_fit</a><a href="LICENSE.html">License</a></nav>
+<h1>chisq_fit (v0.0.2, 2026-09-23)</h1>
+<h2>Purpose</h2><p>Chi-square fit of CSV columns to a user function. Exit 0 ok, 2 usage/data error.</p>
+<h2>Usage</h2><pre class="cmd">python3 src/scripts/chisq_fit.py csvfile [--x-col C] [--y-col C] [--err-col C]
+  [--x-limits lo,hi] [--plot-x-limits lo,hi] [--plot-y-limits lo,hi]
+  [--axis-type x-y] [--with-bin {uniform,std,mad}] [--with-bin-per P] [--n-bins N]
+  [--plot F] [--plot-only] [--fit F.py]</pre>
+<h2>Options</h2>
+<table><tr><th>Option</th><th>Type</th><th>Default</th><th>Req</th><th>Notes</th></tr>
+<tr><td>csvfile</td><td>path</td><td>—</td><td>yes</td><td>1- or 2-header CSV</td></tr>
+<tr><td>--x-col/--y-col/--err-col</td><td>name or 0-based index</td><td>0/1/2</td><td>no</td><td>no err-col: std(y) if x/y given, else 3rd col, else 1.0</td></tr>
+<tr><td>--x-limits</td><td>"lo,hi" (empty=open)</td><td>none</td><td>no</td><td>cuts data</td></tr>
+<tr><td>--plot-x/y-limits</td><td>"lo,hi"</td><td>none</td><td>no</td><td>view only</td></tr>
+<tr><td>--axis-type</td><td>lin|log|exp - lin|log|exp</td><td>lin-lin</td><td>no</td><td>exp = symlog approx</td></tr>
+<tr><td>--with-bin</td><td>uniform|std|mad</td><td>none</td><td>no</td><td>uniform: --n-bins equal-count; std/mad: adaptive within --with-bin-per %</td></tr>
+<tr><td>--with-bin-per</td><td>float</td><td>10.0</td><td>no</td><td>tolerance % for std/mad</td></tr>
+<tr><td>--n-bins</td><td>int</td><td>20</td><td>no</td><td>target bins (uniform)</td></tr>
+<tr><td>--plot</td><td>path</td><td>none</td><td>no</td><td>saves figure (Agg)</td></tr>
+<tr><td>--plot-only</td><td>flag</td><td>off</td><td>no</td><td>skips fitting</td></tr>
+<tr><td>--fit</td><td>.py path</td><td>none</td><td>no*</td><td>*required unless --plot-only</td></tr>
+<tr><td>--help</td><td>flag</td><td>—</td><td>no</td><td>prints usage, exits 0</td></tr></table>
+<h2>Fit-file format</h2>
+<pre>fitfunction = "double_exp"      # selects a function defined below
+fit_range = "7000,800000"       # string "lo,hi" or (lo, hi) tuple
+fit_parameter_filename = "/path/params.txt"
+A1 = "5000:T:(0,20000)"         # "init : T|F|- : (lo,hi)|-"; tuples also accepted
+t01 = "0:F:-"                   # F = hold at init; T = fit
+def double_exp(x, A1, tau1, t01, A2, tau2, t02, C0):
+    return A1*exp(-(x-t01)/tau1) + A2*exp(-(x-t02)/tau2) + C0</pre>
+<h2>Tested examples</h2>
+<pre class="cmd">python3 src/scripts/chisq_fit.py devl/testdir/data/B4_fixed.csv --plot-only --plot /tmp/p.png
+python3 src/scripts/chisq_fit.py devl/tmp/synth_twoheader.csv --fit devl/tmp/synth_fit.py --plot /tmp/f.png
+# -> A=25.13 mu=5.00 sig=1.83, chisq=3.74 dof=8 reduced=0.47
+python3 src/scripts/chisq_fit.py devl/testdir/data/B4_fixed.csv --x-limits "20000,800000" --with-bin uniform --n-bins 60 --fit &lt;double_exp&gt; --axis-type lin-log --plot /tmp/t.png</pre>
+<h2>Troubleshooting</h2>
+<ul><li>Bad column/fit file/empty cut → exit 2 with message.</li>
+<li>Non-positive data on log axes → matplotlib/scipy error, exit 2.</li>
+<li>Amplitude+offset free together → degenerate uncertainties.</li></ul>
+<footer>test_project v0.0.2 docs (2026-09-23). License status: pending — all rights reserved, no warranty. See <a href="LICENSE.html">full license and warranty agreement</a>.</footer>
+</body></html>

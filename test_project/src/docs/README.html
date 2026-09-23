@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>test_project README (v0.0.2)</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<nav><a href="index.html">Index</a><a href="README.html">README</a><a href="test_project-step-by-step.html">Step-by-step</a><a href="chisq_fit.html">chisq_fit</a><a href="LICENSE.html">License</a></nav>
+<h1>test_project — chi-square fitting CLI (v0.0.2)</h1>
+<h2>Purpose</h2>
+<p>Fit columns of a CSV file to arbitrary user-supplied functions by chi-square
+minimisation, with optional binning (uniform/std/mad), y-error handling,
+x-limits vs plot-limits, axis scaling, plot-only preview, and plot + parameter
+file outputs.</p>
+<h2>Requirements</h2>
+<p>Python 3 with numpy, scipy, matplotlib, astropy. Tested with
+numpy 2.3.5, scipy 1.16.3, matplotlib 3.10.6, astropy 7.1.1.</p>
+<h2>Install / run</h2>
+<p>No installer at v0.0.2. Run from the project root:</p>
+<pre class="cmd">python3 src/scripts/chisq_fit.py --help</pre>
+<h2>Quickstart (tested)</h2>
+<pre class="cmd">python3 src/scripts/chisq_fit.py devl/testdir/data/B4_fixed.csv --plot-only --plot /tmp/preview.png
+python3 src/scripts/chisq_fit.py devl/tmp/synth_twoheader.csv --fit devl/tmp/synth_fit.py --plot /tmp/fit.png</pre>
+<h2>Inputs</h2>
+<ul>
+<li>CSV: row 1 = column names; optional row 2 = units; rest numeric data.
+1-header and 2-header files both accepted (units row auto-detected).</li>
+<li>Fit file (<a href="chisq_fit.html">format</a>): <code>fitfunction</code>,
+<code>fit_range</code>, parameter specs <code>NAME:&lt;init&gt;:&lt;T|F|-&gt;:&lt;(lo,hi)|-&gt;</code>,
+<code>fit_parameter_filename</code>, plus the function definitions.</li>
+</ul>
+<h2>Outputs</h2>
+<ul><li>Console best-fit parameters, chi-square, dof, reduced chi-square.</li>
+<li>Plot file (<code>--plot</code>). Parameter file (path from fit file).</li></ul>
+<p>Details: <a href="chisq_fit.html">command reference</a>,
+<a href="test_project-step-by-step.html">step-by-step guide</a>.</p>
+<footer>test_project v0.0.2 docs (2026-09-23). License status: pending — all rights reserved, no warranty. See <a href="LICENSE.html">full license and warranty agreement</a>.</footer>
+</body></html>

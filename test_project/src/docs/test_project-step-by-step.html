@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>test_project step-by-step (v0.0.2)</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<nav><a href="index.html">Index</a><a href="README.html">README</a><a href="test_project-step-by-step.html">Step-by-step</a><a href="chisq_fit.html">chisq_fit</a><a href="LICENSE.html">License</a></nav>
+<h1>Step-by-step guide (v0.0.2, 2026-09-23)</h1>
+<table><tr><th>#</th><th>Goal</th><th>Command (tested)</th><th>Expected output</th><th>Verify</th></tr>
+<tr><td>1</td><td>Preview data</td><td><code>python3 src/scripts/chisq_fit.py devl/testdir/data/B4_fixed.csv --plot-only --plot /tmp/p.png</code></td><td>exit 0, plot file</td><td>file exists, non-empty</td></tr>
+<tr><td>2</td><td>Check columns/errors</td><td><code>--x-col Time(ns) --y-col Counts</code> (falls back to std(y) errors)</td><td>console "errors: std(y)=..."</td><td>read console line</td></tr>
+<tr><td>3</td><td>Cut + zoom separately</td><td><code>--x-limits "100000,700000" --plot-x-limits "0,800000"</code></td><td>"points after x-limits cut: 6000"</td><td>count line</td></tr>
+<tr><td>4</td><td>Write fit file</td><td>see <a href="chisq_fit.html">fit-file format</a></td><td>.py with fitfunction + params</td><td>names match function signature</td></tr>
+<tr><td>5</td><td>Run fit</td><td><code>--fit myfit.py --plot /tmp/f.png</code></td><td>exit 0, params + chisq finite</td><td>param file + "reduced =" line</td></tr>
+<tr><td>6</td><td>Validate</td><td>synthetic data with known truth</td><td>reduced chisq ~1</td><td>compare to truth</td></tr></table>
+<h2>Recovery</h2>
+<ul><li><code>exit 2</code> + "error: ..." = usage/data problem (bad column, bad fit file, empty cut). Fix input, rerun.</li>
+<li>Huge reduced chisq on real data with err=1.0 usually means missing error column — supply <code>--err-col</code>.</li>
+<li>Pure-decay models cannot fit a rising edge (seen on B4 full range); fit the tail or add a rise term.</li>
+<li>Freeing both amplitude and time-offset of one exponential is degenerate — keep offsets fixed.</li></ul>
+<footer>test_project v0.0.2 docs (2026-09-23). License status: pending — all rights reserved, no warranty. See <a href="LICENSE.html">full license and warranty agreement</a>.</footer>
+</body></html>

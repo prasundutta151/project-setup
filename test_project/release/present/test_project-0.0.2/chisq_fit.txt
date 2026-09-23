@@ -1,0 +1,16 @@
+chisq_fit reference (v0.0.2, 2026-09-23). Exit 0 ok, 2 usage/data error.
+Usage: chisq_fit.py csvfile [--x-col C] [--y-col C] [--err-col C]
+  [--x-limits lo,hi] [--plot-x-limits lo,hi] [--plot-y-limits lo,hi]
+  [--axis-type x-y] [--with-bin uniform|std|mad] [--with-bin-per P] [--n-bins N]
+  [--plot F] [--plot-only] [--fit F.py]
+Options (type, default): csvfile path req; --x/--y/--err-col name|index, 0/1/2;
+--x-limits "lo,hi", none, cuts data; --plot-*-limits view only;
+--axis-type lin|log|exp pair, lin-lin (exp=symlog); --with-bin, none;
+--with-bin-per float 10.0; --n-bins int 20; --plot path; --plot-only flag;
+--fit .py (required unless --plot-only).
+Error fallback: std(y) if x/y given, else 3rd col, else 1.0.
+Fit file: fitfunction, fit_range "lo,hi", params NAME:<init>:<T|F|->:<(lo,hi)|->,
+fit_parameter_filename, function defs.
+Tested: synth gauss A=25.13 mu=5.00 sig=1.83 chisq 3.74/8 (0.47);
+double_exp w/ offsets recovers truth, reduced 0.91.
+License: pending — all rights reserved. See LICENSE.txt.

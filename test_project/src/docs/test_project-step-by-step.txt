@@ -1,0 +1,10 @@
+test_project step-by-step (v0.0.2, 2026-09-23)
+1. Preview:  python3 src/scripts/chisq_fit.py devl/testdir/data/B4_fixed.csv --plot-only --plot /tmp/p.png  -> exit 0 + plot
+2. Columns:  --x-col/--y-col select; no err-col -> std(y) uniform fallback
+3. Limits:   --x-limits cuts data; --plot-x-limits only zooms the view
+4. Fit file: fitfunction + fit_range + NAME:<init>:<T|F|->:<(lo,hi)|-> params + fit_parameter_filename
+5. Fit:      --fit myfit.py --plot /tmp/f.png -> params, chisq finite
+6. Validate: synthetic known-truth data should give reduced chisq ~1
+Recovery: exit 2 = fix input; huge chisq with err=1 -> supply --err-col;
+decay-only models can't fit rising edges; amplitude+offset is degenerate.
+License: pending — all rights reserved. See LICENSE.txt.

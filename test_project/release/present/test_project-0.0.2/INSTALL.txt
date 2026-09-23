@@ -1,0 +1,14 @@
+test_project 0.0.2 — install and run (macOS / Linux)
+====================================================
+1. Requirements: Python 3.9+ with numpy, scipy, matplotlib, astropy.
+   pip install numpy scipy matplotlib astropy
+2. No build step. Run directly:
+   python3 chisq_fit.py --help
+   or, if executable bit preserved:
+   ./chisq_fit.py --help
+3. Example:
+   python3 chisq_fit.py <data.csv> --plot-only --plot /tmp/preview.png
+   See README.txt and chisq_fit.txt for full usage.
+4. The fit-definition samples (example_gauss_fit.py) are templates;
+   copy and edit for your own functions.
+No private interpreter paths are used (shebang: /usr/bin/env python3).

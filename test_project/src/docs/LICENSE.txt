@@ -1,0 +1,4 @@
+test_project license and warranty (v0.0.2, 2026-09-23)
+No license selected yet. (c) 2026, all rights reserved; no permission to
+copy, modify, redistribute, or use is granted by this file.
+NO WARRANTY: provided "as is", without warranty of any kind.
